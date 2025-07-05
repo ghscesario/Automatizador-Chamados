@@ -64,7 +64,7 @@ public class ChamadoService {
             selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
 
             // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
-            selecionarBlocoPrimeiraOpcao(page);
+            selecionarBloco(page, "HOSPITAL");
 
             // RESUMO
             page.waitForSelector("textarea[name='short_description']");
@@ -83,18 +83,28 @@ public class ChamadoService {
         System.out.println("Unidade selecionada: " + valorDesejado);
     }
 
-    // Campo Bloco - selecionar primeira opção sem digitar
-    private void selecionarBlocoPrimeiraOpcao(Page page) {
-        Locator setaDropdown = page.locator("#s2id_sp_formfield_bloco .select2-arrow");
-        setaDropdown.click();
+    private void selecionarBloco(Page page, String valorDesejado) {
+        try {
+            // Clica na seta para abrir o dropdown do Bloco
+            Locator setaDropdown = page.locator("#s2id_sp_formfield_bloco .select2-arrow");
+            setaDropdown.click();
 
-        // Aguarda o dropdown abrir
-        page.waitForSelector("div.select2-drop-active", new Page.WaitForSelectorOptions().setTimeout(5000));
-        page.waitForTimeout(500); // garante carregamento
+            // Espera o container da lista aparecer
+            page.waitForSelector("ul#select2-results-11", new Page.WaitForSelectorOptions().setTimeout(5000));
 
-        // Pressiona Enter para escolher a primeira opção
-        page.keyboard().press("Enter");
+            // Localiza o item <li> da lista que contém o texto da opção desejada e clica
+            Locator opcao = page.locator("ul#select2-results-11 > li", new Page.LocatorOptions().setHasText(valorDesejado));
+            opcao.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            opcao.click();
+
+            System.out.println("Bloco selecionado: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar bloco: " + valorDesejado);
+            e.printStackTrace();
+        }
     }
+
+
 
     // Reutilizável para campos Select2 com digitação
     private void selecionarOpcaoSelect2(Page page, String select2Id, String valorDesejado) {
