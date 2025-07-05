@@ -48,36 +48,71 @@ public class ChamadoService {
             );
 
             Page page = context.newPage();
-            page.navigate("https://hiaeprod.service-now.com.mcas.ms/now/sow/record/incident/-1_uid_1/params/query/opened_atONToday%40javascript%3Ags.beginningOfToday()%40javascript%3Ags.endOfToday()%5Elocation%3Db6452e92474ae210c6e5dd6df26d4380");
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
 
-            // Aguarda o carregamento da página
-            page.waitForTimeout(5000);
-
-            // Caminho completo até o campo de telefone no Shadow DOM
-            Locator inputTelefone = page.locator("macroponent-f51912f4c700201072b211d4d8c26010")
-                .locator("#item-snCanvasAppshellMain")
-                .locator("macroponent-c276387cc331101080d6d3658940ddd2")
-                .locator("#item-wsContent")
-                .locator("sn-canvas-screen")
-                .locator("screen-action-transformer-ddd9404843fa2110f20fff53e9b8f2bf")
-                .locator("macroponent-c5d9c00443fa2110f20fff53e9b8f2d0")
-                .locator("#item-details_resizable_panes > now-record-form-section-column-layout")
-                .locator("div.sn-form-column-layout-container.-vertical > div > div > div.sn-form-column-layout-sections > section:nth-child(1) > div > div > div:nth-child(1) > div:nth-child(1) > sn-record-input-connected:nth-child(3)")
-                .locator("now-popover > now-input")
-                .locator("#form-field-gd8vh8chlup7-1574");
-
-            // Preenche o telefone
+            // TELEFONE
+            page.waitForSelector("input[name='telefone_celular']");
+            Locator inputTelefone = page.locator("input[name='telefone_celular']");
             inputTelefone.fill("1199999999");
 
-            // Clica no botão de envio (ajuste o seletor se necessário)
-            Locator botaoEnviar = page.locator("now-button-bar")
-                .locator("button:has-text('Enviar')");
+            // HORÁRIO TRABALHO
+            page.waitForSelector("input[name='horario_escala_trabalho']");
+            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
+            inputHorario.fill("24h");
 
-            botaoEnviar.click();
+            // Selecionar Unidade (digitação e seleção)
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+
+            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
+            selecionarBlocoPrimeiraOpcao(page);
+
+            // RESUMO
+            page.waitForSelector("textarea[name='short_description']");
+            Locator inputResumo = page.locator("textarea[name='short_description']");
+            inputResumo.fill("teste");
 
             System.out.println("Chamado criado com sucesso.");
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado:");
+            e.printStackTrace();
+        }
+    }
+
+    private void selecionarUnidade(Page page, String valorDesejado) {
+        selecionarOpcaoSelect2(page, "s2id_sp_formfield_unidade", valorDesejado);
+        System.out.println("Unidade selecionada: " + valorDesejado);
+    }
+
+    // Campo Bloco - selecionar primeira opção sem digitar
+    private void selecionarBlocoPrimeiraOpcao(Page page) {
+        Locator setaDropdown = page.locator("#s2id_sp_formfield_bloco .select2-arrow");
+        setaDropdown.click();
+
+        // Aguarda o dropdown abrir
+        page.waitForSelector("div.select2-drop-active", new Page.WaitForSelectorOptions().setTimeout(5000));
+        page.waitForTimeout(500); // garante carregamento
+
+        // Pressiona Enter para escolher a primeira opção
+        page.keyboard().press("Enter");
+    }
+
+    // Reutilizável para campos Select2 com digitação
+    private void selecionarOpcaoSelect2(Page page, String select2Id, String valorDesejado) {
+        try {
+            Locator setaDropdown = page.locator("#" + select2Id + " .select2-arrow");
+            setaDropdown.click();
+
+            page.waitForTimeout(500);
+            Locator campoBusca = page.locator("div.select2-drop-active input.select2-input");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            Locator resultado = page.locator("li.select2-result:has-text('" + valorDesejado + "')");
+            resultado.waitFor(new Locator.WaitForOptions().setTimeout(7000));
+            resultado.click();
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar opção do select2: " + valorDesejado);
             e.printStackTrace();
         }
     }
