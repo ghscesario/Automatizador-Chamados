@@ -90,12 +90,89 @@ public class ChamadoService {
             // Descrição Curta
             page.waitForSelector("textarea[name='short_description']");
             Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("teste2");
+            inputResumo.fill("teste 3");
             
             // Descrição detalhada
             page.waitForSelector("textarea[name='description']");
             Locator inputDescricao = page.locator("textarea[name='description']");
             inputDescricao.fill("teste");
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+
+            // Aguarda o botão estar visível e habilitado
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Clica no botão
+            botaoEnviar.click();
+
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            System.out.println("Chamado criado com sucesso.");
+        } catch (Exception e) {
+            System.err.println("Erro ao criar o chamado:");
+            e.printStackTrace();
+        }
+    }
+
+    // EXECUTAR SEM LOGIN
+    public void criarChamadoImpressora(String ip) {
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
+
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+            // TELEFONE
+            page.waitForSelector("input[name='telefone_celular']");
+            Locator inputTelefone = page.locator("input[name='telefone_celular']");
+            inputTelefone.fill("1199999999");
+
+            // HORÁRIO TRABALHO
+            page.waitForSelector("input[name='horario_escala_trabalho']");
+            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
+            inputHorario.fill("(BOT)");
+
+            // Selecionar Unidade (digitação e seleção)
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+
+            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
+            selecionarBloco(page, "BLOCO ADMINISTRATIVO");
+
+            //Selecionar Andar
+            selecionarAndar(page, "TÉRREO");
+
+            //Selecionar Área
+            selecionarArea(page, "T.I");         
+
+            //Selecionar Categoria
+            selecionarCategoria(page, "Equipamentos de TI");
+
+            //Selecionar Sub Categoria
+            selecionarSubCategoria(page, "Equipamentos Millennium");
+
+            //Selecionar Centro de Custo
+            selecionarCentroCusto(page, "ORTI");
+
+            //Selecionar Urgencia
+            selecionarUrgencia(page, "O meu departamento e não");
+
+            //Selecionar Sintoma
+            selecionarSintoma(page, "Indisponibilidade");
+
+            // Descrição Curta
+            page.waitForSelector("textarea[name='short_description']");
+            Locator inputResumo = page.locator("textarea[name='short_description']");
+            inputResumo.fill("Troca de toner, impressora:"+ip+" (BOT)");
+            
+            // Descrição detalhada
+            page.waitForSelector("textarea[name='description']");
+            Locator inputDescricao = page.locator("textarea[name='description']");
+            inputDescricao.fill("Sistema automatizado identificou na varredura que a impressora: "+ip+", necessita da substituição do toner!");
 
             Locator botaoEnviar = page.locator("#submit-btn");
 

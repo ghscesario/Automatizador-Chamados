@@ -4,15 +4,21 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PrinterMonitorService {
+
+    @Autowired
+    private ChamadoService chamadoService;
 
     private final List<String> printerIps = List.of(
         "10.239.20.70",
@@ -21,6 +27,9 @@ public class PrinterMonitorService {
         "10.239.20.37",
         "10.239.20.74"
     );
+
+    // Conjunto thread-safe para IPs com chamado aberto
+    private final Set<String> impressorasComChamadoAberto = ConcurrentHashMap.newKeySet();
 
     @Scheduled(fixedRate = 1800000)
     public void checkAllPrinters() {
@@ -34,6 +43,26 @@ public class PrinterMonitorService {
     }
 
     public void checkPrinter(String ip) throws Exception {
+        // Se já tem chamado aberto, verifica só se o toner recuperou
+        if (impressorasComChamadoAberto.contains(ip)) {
+            Document doc = getHtmlIgnoringSSL("https://" + ip + "/main.asp?Lang=en-us");
+            Element tonerTable = doc.selectFirst("table.toner");
+
+            int percent = 0;
+            if (tonerTable != null) {
+                String widthAttr = tonerTable.attr("width");
+                percent = parsePercent(widthAttr);
+            }
+            if (percent >= 10) {
+                impressorasComChamadoAberto.remove(ip);
+                System.out.println("IP " + ip + " - Nível de toner recuperado (" + percent + "%). Monitoramento normal retomado.");
+            } else {
+                System.out.println("IP " + ip + " - Chamado já aberto. Toner em " + percent + "%. Aguardando recuperação.");
+            }
+            return;
+        }
+
+        // Fluxo normal para impressora sem chamado aberto
         String url = "https://" + ip + "/main.asp?Lang=en-us";
 
         Document doc;
@@ -49,6 +78,7 @@ public class PrinterMonitorService {
             int nivel = 0; // assume toner vazio
             System.out.println("IP " + ip + " - Barra de toner não encontrada. Possivelmente toner vazio (0%).");
             abrirChamado(ip, nivel);
+            impressorasComChamadoAberto.add(ip);
             return;
         }
 
@@ -59,6 +89,7 @@ public class PrinterMonitorService {
             System.out.println("IP " + ip + " - Toner preto em " + percent + "%");
             if (percent < 10) {
                 abrirChamado(ip, percent);
+                impressorasComChamadoAberto.add(ip);
             }
         } else {
             System.out.println("IP " + ip + " - Não foi possível extrair a porcentagem do toner.");
@@ -76,7 +107,7 @@ public class PrinterMonitorService {
 
     private void abrirChamado(String ip, int nivel) {
         System.out.println("Abrindo chamado para IP " + ip + " com toner em " + nivel + "%");
-        // restTemplate.postForObject("http://seuservico/api/chamados", new Chamado(ip, nivel), Void.class);
+        //chamadoService.criarChamadoImpressora();
     }
 
     private Document getHtmlIgnoringSSL(String url) throws Exception {
