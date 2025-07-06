@@ -70,13 +70,13 @@ public class ChamadoService {
             selecionarAndar(page, "1º ANDAR");
 
             //Selecionar Área
-            selecionarArea(page, "CENTRO CIRUGICO CORREDORES");
-
-            //Selecionar Centro de Custo
-            selecionarCusto(page, "ORTI");
+            selecionarArea(page, "CENTRO CIRUGICO CORREDORES");         
 
             //Selecionar Categoria
             selecionarCategoria(page, "Equipamentos de TI");
+
+            //Selecionar Sub Categoria
+            selecionarSubCategoria(page, "Desktop");
 
             // RESUMO
             page.waitForSelector("textarea[name='short_description']");
@@ -158,37 +158,6 @@ public class ChamadoService {
         }
     }
 
-    private void selecionarCusto(Page page, String valorDesejado) {
-    try {
-        // Abre o dropdown
-        Locator setaDropdown = page.locator("#s2id_sp_formfield_centro_custo .select2-arrow");
-        setaDropdown.click();
-
-        // Aguarda o dropdown abrir completamente
-        page.waitForSelector("div.select2-drop-active", new Page.WaitForSelectorOptions().setTimeout(3000));
-
-        // Aguarda a lista carregar
-        page.waitForSelector("div[id^='select2-result-label-']", new Page.WaitForSelectorOptions().setTimeout(5000));
-
-        // Encontra qualquer div com id começando com 'select2-result-label-' que contenha o texto
-        Locator opcao = page.locator("div[id^='select2-result-label-']").filter(
-            new Locator.FilterOptions().setHasText(valorDesejado)
-        );
-
-        opcao.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-        opcao.click();
-
-        System.out.println("Centro de custo selecionado: " + valorDesejado);
-    } catch (Exception e) {
-        System.err.println("Erro ao selecionar centro de custo: " + valorDesejado);
-        e.printStackTrace();
-    }
-}
-
-
-
-
-
     private void selecionarCategoria(Page page, String valorDesejado) {
         try {
             // Clica na seta para abrir o dropdown do Bloco
@@ -209,6 +178,44 @@ public class ChamadoService {
             e.printStackTrace();
         }
     }
+
+    private void selecionarSubCategoria(Page page, String valorDesejado) {
+        try {
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
+
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_subcategory");
+            dropdown.click();
+
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen7_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
+
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
+
+            System.out.println("Subcategoria selecionada: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
 
     // Reutilizável para campos Select2 com digitação
     private void selecionarOpcaoSelect2(Page page, String select2Id, String valorDesejado) {
