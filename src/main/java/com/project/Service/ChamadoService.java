@@ -78,10 +78,34 @@ public class ChamadoService {
             //Selecionar Sub Categoria
             selecionarSubCategoria(page, "Desktop");
 
-            // RESUMO
+            //Selecionar Centro de Custo
+            selecionarCentroCusto(page, "ORTI");
+
+            //Selecionar Urgencia
+            selecionarUrgencia(page, "Poucos equipamentos");
+
+            //Selecionar Sintoma
+            selecionarSintoma(page, "Falha");
+
+            // Descrição Curta
             page.waitForSelector("textarea[name='short_description']");
             Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("teste");
+            inputResumo.fill("teste2");
+            
+            // Descrição detalhada
+            page.waitForSelector("textarea[name='description']");
+            Locator inputDescricao = page.locator("textarea[name='description']");
+            inputDescricao.fill("teste");
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+
+            // Aguarda o botão estar visível e habilitado
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Clica no botão
+            botaoEnviar.click();
+
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
 
             System.out.println("Chamado criado com sucesso.");
         } catch (Exception e) {
@@ -210,12 +234,95 @@ public class ChamadoService {
     }
 
 
+    private void selecionarCentroCusto(Page page, String valorDesejado) {
+        try {
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
 
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_centro_custo");
+            dropdown.click();
 
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen10_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
 
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
 
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
 
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
 
+            System.out.println("Subcategoria selecionada: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
+            e.printStackTrace();
+        }
+    }
+
+    private void selecionarUrgencia(Page page, String valorDesejado) {
+        try {
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
+
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_urgency");
+            dropdown.click();
+
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen5_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
+
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
+
+            System.out.println("Subcategoria selecionada: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
+            e.printStackTrace();
+        }
+    }
+
+    private void selecionarSintoma(Page page, String valorDesejado) {
+        try {
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
+
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_u_symptom");
+            dropdown.click();
+
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen6_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
+
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
+
+            System.out.println("Subcategoria selecionada: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
+            e.printStackTrace();
+        }
+    }
 
     // Reutilizável para campos Select2 com digitação
     private void selecionarOpcaoSelect2(Page page, String select2Id, String valorDesejado) {
