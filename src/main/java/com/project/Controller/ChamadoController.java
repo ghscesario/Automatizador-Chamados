@@ -20,7 +20,7 @@ public class ChamadoController {
 
     @GetMapping("/chamar")
     public void chamarAutomatizador(){
-        chamadoService.criarChamado();
+        chamadoService.criarChamadoPadrao();
     }
 
     @GetMapping("/verificarToner")

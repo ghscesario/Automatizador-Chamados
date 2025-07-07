@@ -96,6 +96,7 @@ public class PrinterMonitorService {
         }
     }
 
+    @SuppressWarnings("UseSpecificCatch")
     private int parsePercent(String width) {
         try {
             return Integer.parseInt(width.replace("%", "").trim());
@@ -107,6 +108,7 @@ public class PrinterMonitorService {
 
     private void abrirChamado(String ip, int nivel) {
         System.out.println("Abrindo chamado para IP " + ip + " com toner em " + nivel + "%");
+        //Descomentar linha abaixo para abrir chamados automaticamente quando os níveis de toner estiverem baixos
         //chamadoService.criarChamadoImpressora();
     }
 

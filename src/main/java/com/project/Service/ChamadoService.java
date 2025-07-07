@@ -23,7 +23,7 @@ public class ChamadoService {
             BrowserContext context = browser.newContext();
             Page page = context.newPage();
 
-            page.navigate("https://hiaeprod.service-now.com.mcas.ms/now/sow/record/incident/-1_uid_1/params/query/opened_atONToday%40javascript%3Ags.beginningOfToday()%40javascript%3Ags.endOfToday()%5Elocation%3Db6452e92474ae210c6e5dd6df26d4380");
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
 
             System.out.println("Faça o login manualmente (com MFA), depois pressione ENTER...");
             System.in.read();
@@ -33,12 +33,12 @@ public class ChamadoService {
 
             System.out.println("Sessão salva com sucesso.");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Erro ao criar sessão!");
         }
     }
 
     // EXECUTAR SEM LOGIN
-    public void criarChamado() {
+    public void criarChamadoPadrao() {
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
                 .launch(new BrowserType.LaunchOptions().setHeadless(false));
@@ -110,7 +110,83 @@ public class ChamadoService {
             System.out.println("Chamado criado com sucesso.");
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado:");
-            e.printStackTrace();
+        }
+    }
+
+
+    // EXECUTAR SEM LOGIN
+    public void criarChamado(String telefone, String horario, String bloco, String andar, String area, String categoria, String subCategoria, String urgencia, String sintoma, String descResumo, String descDetalhada) {
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
+
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+            // TELEFONE
+            page.waitForSelector("input[name='telefone_celular']");
+            Locator inputTelefone = page.locator("input[name='telefone_celular']");
+            inputTelefone.fill(telefone);
+
+            // HORÁRIO TRABALHO
+            page.waitForSelector("input[name='horario_escala_trabalho']");
+            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
+            inputHorario.fill(horario);
+
+            // Selecionar Unidade (digitação e seleção)
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+
+            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
+            selecionarBloco(page, bloco);
+
+            //Selecionar Andar
+            selecionarAndar(page, andar);
+
+            //Selecionar Área
+            selecionarArea(page, area);         
+
+            //Selecionar Categoria
+            selecionarCategoria(page, categoria);
+
+            //Selecionar Sub Categoria
+            selecionarSubCategoria(page, subCategoria);
+
+            //Selecionar Centro de Custo
+            selecionarCentroCusto(page, "ORTI");
+
+            //Selecionar Urgencia
+            selecionarUrgencia(page, urgencia);
+
+            //Selecionar Sintoma
+            selecionarSintoma(page, sintoma);
+
+            // Descrição Curta
+            page.waitForSelector("textarea[name='short_description']");
+            Locator inputResumo = page.locator("textarea[name='short_description']");
+            inputResumo.fill("teste 3");
+            
+            // Descrição detalhada
+            page.waitForSelector("textarea[name='description']");
+            Locator inputDescricao = page.locator("textarea[name='description']");
+            inputDescricao.fill("teste");
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+
+            // Aguarda o botão estar visível e habilitado
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Clica no botão
+            botaoEnviar.click();
+
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            System.out.println("Chamado criado com sucesso.");
+        } catch (Exception e) {
+            System.err.println("Erro ao criar o chamado:");
         }
     }
 
@@ -187,7 +263,6 @@ public class ChamadoService {
             System.out.println("Chamado criado com sucesso.");
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado:");
-            e.printStackTrace();
         }
     }
 
@@ -213,7 +288,6 @@ public class ChamadoService {
             System.out.println("Bloco selecionado: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar bloco: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -234,7 +308,6 @@ public class ChamadoService {
             System.out.println("Bloco selecionado: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar bloco: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -255,7 +328,6 @@ public class ChamadoService {
             System.out.println("Bloco selecionado: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar bloco: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -276,7 +348,6 @@ public class ChamadoService {
             System.out.println("Bloco selecionado: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar bloco: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -306,7 +377,6 @@ public class ChamadoService {
             System.out.println("Subcategoria selecionada: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -337,7 +407,6 @@ public class ChamadoService {
             System.out.println("Subcategoria selecionada: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -367,7 +436,6 @@ public class ChamadoService {
             System.out.println("Subcategoria selecionada: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -397,7 +465,6 @@ public class ChamadoService {
             System.out.println("Subcategoria selecionada: " + valorDesejado);
         } catch (Exception e) {
             System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 
@@ -418,7 +485,6 @@ public class ChamadoService {
             resultado.click();
         } catch (Exception e) {
             System.err.println("Erro ao selecionar opção do select2: " + valorDesejado);
-            e.printStackTrace();
         }
     }
 }
