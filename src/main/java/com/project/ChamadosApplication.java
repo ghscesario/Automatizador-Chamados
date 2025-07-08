@@ -8,8 +8,6 @@ public class ChamadosApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ChamadosApplication.class, args);
-		Prompt promt = new Prompt();
-		Prompt.main(args);
 	}
 
 }
