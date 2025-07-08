@@ -79,7 +79,7 @@ public class ChamadoService {
             selecionarSubCategoria(page, "Desktop");
 
             //Selecionar Centro de Custo
-            selecionarCentroCusto(page, "ORTI");
+            selecionarCentroCusto(page, "CMHG");
 
             //Selecionar Urgencia
             selecionarUrgencia(page, "Poucos equipamentos");
@@ -90,7 +90,7 @@ public class ChamadoService {
             // Descrição Curta
             page.waitForSelector("textarea[name='short_description']");
             Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("teste 3");
+            inputResumo.fill("teste 4 08/07/2025");
             
             // Descrição detalhada
             page.waitForSelector("textarea[name='description']");
@@ -226,13 +226,13 @@ public class ChamadoService {
             selecionarArea(page, "T.I");         
 
             //Selecionar Categoria
-            selecionarCategoria(page, "Equipamentos de TI");
+            selecionarCategoria(page, "Impressoras");
 
             //Selecionar Sub Categoria
-            selecionarSubCategoria(page, "Equipamentos Millennium");
+            selecionarSubCategoria(page, "Impressora de papel");
 
             //Selecionar Centro de Custo
-            selecionarCentroCusto(page, "ORTI");
+            selecionarCentroCusto(page, "CMHG");
 
             //Selecionar Urgencia
             selecionarUrgencia(page, "O meu departamento e não");
@@ -243,7 +243,7 @@ public class ChamadoService {
             // Descrição Curta
             page.waitForSelector("textarea[name='short_description']");
             Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("Troca de toner, impressora:"+ip+" (BOT)");
+            inputResumo.fill("Troca de toner, impressora: "+ip+" (BOT)");
             
             // Descrição detalhada
             page.waitForSelector("textarea[name='description']");
