@@ -42,15 +42,21 @@ public class EvolutionWebhookController {
             return ResponseEntity.ok("Mensagem sem key ou message");
         }
 
+        String remoteJid = (String) key.get("remoteJid");
+        if (remoteJid == null) {
+            return ResponseEntity.ok("Número remoto não informado");
+        }
+
+        // IGNORA MENSAGENS DE GRUPOS
+        if (remoteJid.contains("@g.us")) {
+            System.out.println("Mensagem recebida de grupo. Ignorando.");
+            return ResponseEntity.ok("Mensagem de grupo ignorada");
+        }
+
         String text = (String) message.get("conversation");
         if (text == null || text.trim().isEmpty()) {
             System.out.println("Mensagem vazia ou tipo diferente de 'conversation'");
             return ResponseEntity.ok("Mensagem vazia ou tipo não suportado");
-        }
-
-        String remoteJid = (String) key.get("remoteJid");
-        if (remoteJid == null) {
-            return ResponseEntity.ok("Número remoto não informado");
         }
 
         String userNumber = remoteJid.replace("@s.whatsapp.net", "");

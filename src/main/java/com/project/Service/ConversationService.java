@@ -29,7 +29,16 @@ public class ConversationService {
     );
     private static final Map<String, List<String>> BLOCO_ANDAR_AREAS = Map.of(
         "HOSPITAL.SUBSOLO", List.of("COPA CME", "FARMÁCIA CENTRAL", "NUTRIÇÃO", "AGENCIA TRANSFUSIONAL", "CAF", "NECROTÉRIO"),
-        "HOSPITAL.TÉRREO", List.of("AGENDAMENTO DE RETORNO", "AMBULATÓRIO DE ENFERMAGEM", "CONSULTÓRIO 01", "CONSULTÓRIO 02", "UTI 4: COPA"),
+        "HOSPITAL.1º ANDAR", List.of("CENTRO CIRÚRGICO: COPA", "CENTRO CIRÚRGICO: RECEPIÇÃO", "RPA 1", "CENTRO CIRÚRGICO: SALA 01", "CENTRO CIRÚRGICO: SALA 02", "CENTRO CIRÚRGICO: SALA 03"
+        , "CENTRO CIRÚRGICO: SALA 04", "CENTRO CIRÚRGICO: SALA 05", "CENTRO CIRÚRGICO: SALA 06", "CENTRO CIRÚRGICO: SALA 07", "CENTRO CIRÚRGICO: SALA 08", "CENTRO CIRÚRGICO: SALA 09", "CENTRO CIRÚRGICO: SALA 10", "FARMÁCIA SATÉLITE 2", "SALA DOS MÉDICOS", "UTI 1: COPA", "UTI 2: COPA"),
+        "HOSPITAL.2º ANDAR", List.of("POSTO 1", "POSTO 2", "PRESCRIÇÃO MÉDICA"),
+        "HOSPITAL.3º ANDAR", List.of("POSTO 1", "POSTO 2", "PRESCRIÇÃO MÉDICA"),
+        "HOSPITAL.4º ANDAR", List.of("POSTO 1", "POSTO 2", "PRESCRIÇÃO MÉDICA"),
+        "HOSPITAL.TÉRREO", List.of("(GESSO) SALA DOS MÉDICOS", "AGENDAMENTO DE RETORNO", "AMBULATÓRIO DE ENFERMAGEM", "CONSULTÓRIO 01", "CONSULTÓRIO 02",
+         "CONSULTÓRIO 03", "CONSULTÓRIO 04", "CONSULTÓRIO 05", "CONSULTÓRIO 06", "CONSULTÓRIO 07", "CONSULTÓRIO 08", "CONSULTÓRIO 09", "APOIO OPERACIONAL",
+          "EMERGÊNCIA/ REPOUSO DE ENFERMAGEM", "(UI)-01", "(UI)-02", "UDC", "FARMÁCIA SATELITE", "FARMÁCIA AMBULATORIAL (EMERGÊNCIA)", "FONOAUDIOLOGIA", "HOSPITAL DIA",
+           "MDA/ RECEPÇÃO", "MDA/ SALA DE CONTROLE DA TOMOGRAFIA", "MDA/ SALA DE EXAMES 03", "ENDOSCOPIA", "ULTRASSONOGRAFIA", "MDA/ SALA DE LAUDO", "RAIO-X 01",
+            "RAIO-X 02", "RAIO-X 03", "SALA DE VACINAS", "NAVEGAÇÃO", "NIR", "NQSP", "SERVIÇO SOCIAL", "CURATIVO", "SALA VERMELHA", "SAME", "UTI 3: COPA", "UTI 4: COPA"),
         "BLOCO ADMINISTRATIVO.TÉRREO", List.of("AUDITÓRIO", "BIBLIOTECA", "RH", "T.I"),
         "BLOCO ADMINISTRATIVO.1º ANDAR", List.of("COMPRAS", "CONTROLADORIA", "DIRETORIA ADMINISTRATIVA")
     );
@@ -43,7 +52,8 @@ public class ConversationService {
         "Sistemas", List.of("Sistemas Corporativos", "Sistemas de Imagem"),
         "Telefonia", List.of("Ramal/Telefone fixo", "Celular corporativo")
     );
-    private static final List<String> URGENCIAS = List.of("Poucos equipamentos", "O meu departamento e não", "Toda a unidade");
+    private static final List<String> URGENCIAS = List.of("Poucos equipamentos", "O meu departamento e não afeta diretamente o atendimento ao cliente"
+    ,"Um ou mais computador(es) ligado(s) a equipamento(s) médico(s)", "O meu departamento e diretamente o atendimento ao cliente", "Toda a unidade");
     private static final List<String> SINTOMAS = List.of("Indisponibilidade", "Falha/Erro", "Lentidão", "Intermitência");
 
     ConversationService(ChamadoService chamadoService) {
@@ -67,7 +77,7 @@ public class ConversationService {
         String modo = userModes.get(user);
 
         if (MODO_INFO.equals(modo)) {
-            return "📌 Informações da T.I:\n- Atendimento de segunda a sexta, das 08h às 18h\n- Suporte emergencial: ramal 1234\n- Email: suporte@hospital.com\n\nDigite 'menu' para voltar.";
+            return "📌 Informações da T.I:\n- Atendimento 24h \n- Suporte emergencial: ramal 4423 ou 4425 \n- Email: tihugo@einstein.br \n\nDigite 'menu' para voltar.";
         }
 
         if (MODO_ATENDENTE.equals(modo)) {
@@ -83,24 +93,26 @@ public class ConversationService {
         }
 
         switch (step) {
-            case 0:
+            case 0 -> {
                 if (!responses.containsKey("telefone")) {
                     String telefoneLimpo = limparTelefone(user);
                     if (!telefoneValido(telefoneLimpo)) {
-                        return "Número inválido. Por favor, envie seu número com DDD, ex: 62982595863";
+                        return "Número inválido. Por favor, envie seu número com DDD, ex: 62911111111";
                     }
                     responses.put("telefone", telefoneLimpo);
                 }
                 userStep.put(user, 1);
                 return "Informe seu horário de trabalho (ex: 07h às 19h):";
+            }
 
 
-            case 1:
+            case 1 -> {
                 responses.put("horario", message.trim());
                 userStep.put(user, 2);
                 return buildOptionsMessage("Selecione o bloco:", BLOCO_KEYS);
+            }
 
-            case 2:
+            case 2 -> {
                 try {
                     int idx = Integer.parseInt(message.trim()) - 1;
                     if (idx < 0 || idx >= BLOCO_KEYS.size()) throw new NumberFormatException();
@@ -108,11 +120,12 @@ public class ConversationService {
                     responses.put("bloco", bloco);
                     userStep.put(user, 3);
                     return buildOptionsMessage("Selecione o andar do bloco " + bloco + ":", BLOCO_ANDARES.get(bloco));
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Bloco inválido. Tente novamente.";
                 }
+            }
 
-            case 3:
+            case 3 -> {
                 try {
                     String bloco = responses.get("bloco");
                     List<String> andares = BLOCO_ANDARES.get(bloco);
@@ -122,11 +135,12 @@ public class ConversationService {
                     userStep.put(user, 4);
                     List<String> areas = BLOCO_ANDAR_AREAS.getOrDefault(bloco + "." + andar, List.of("Área não disponível"));
                     return buildOptionsMessage("Selecione a área:", areas);
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Andar inválido. Tente novamente.";
                 }
+            }
 
-            case 4:
+            case 4 -> {
                 try {
                     String bloco = responses.get("bloco");
                     String andar = responses.get("andar");
@@ -136,11 +150,12 @@ public class ConversationService {
                     responses.put("area", area);
                     userStep.put(user, 5);
                     return buildOptionsMessage("Selecione a categoria:", CATEGORIAS);
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Área inválida. Tente novamente.";
                 }
+            }
 
-            case 5:
+            case 5 -> {
                 try {
                     int idx = Integer.parseInt(message.trim()) - 1;
                     String categoria = CATEGORIAS.get(idx);
@@ -148,11 +163,12 @@ public class ConversationService {
                     userStep.put(user, 6);
                     List<String> subcats = SUBCATEGORIAS.getOrDefault(categoria, List.of("Nenhuma"));
                     return buildOptionsMessage("Selecione a subcategoria:", subcats);
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Categoria inválida. Tente novamente.";
                 }
+            }
 
-            case 6:
+            case 6 -> {
                 try {
                     String categoria = responses.get("categoria");
                     List<String> subcats = SUBCATEGORIAS.getOrDefault(categoria, List.of("Nenhuma"));
@@ -161,38 +177,42 @@ public class ConversationService {
                     responses.put("subcategoria", subcat);
                     userStep.put(user, 7);
                     return buildOptionsMessage("Selecione o nível de urgência:", URGENCIAS);
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Subcategoria inválida. Tente novamente.";
                 }
+            }
 
-            case 7:
+            case 7 -> {
                 try {
                     int idx = Integer.parseInt(message.trim()) - 1;
                     String urgencia = URGENCIAS.get(idx);
                     responses.put("urgencia", urgencia);
                     userStep.put(user, 8);
                     return buildOptionsMessage("Selecione o sintoma:", SINTOMAS);
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Urgência inválida. Tente novamente.";
                 }
+            }
 
-            case 8:
+            case 8 -> {
                 try {
                     int idx = Integer.parseInt(message.trim()) - 1;
                     String sintoma = SINTOMAS.get(idx);
                     responses.put("sintoma", sintoma);
                     userStep.put(user, 9);
                     return "Digite um resumo do problema:";
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     return "❌ Sintoma inválido. Tente novamente.";
                 }
+            }
 
-            case 9:
+            case 9 -> {
                 responses.put("resumo", message.trim());
                 userStep.put(user, 10);
                 return "Descreva o problema com mais detalhes:";
+            }
 
-            case 10:
+            case 10 -> {
                 responses.put("descricao", message.trim());
 
                 // Impressão dos dados no console
@@ -211,66 +231,73 @@ public class ConversationService {
                 System.out.println("-----------------------------");
 
                 // Chamada ao serviço Playwright para abrir o chamado
-            try {
-                String telefoneOriginal = responses.get("telefone");
-                String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa aqui de novo para garantir
-
-                String horario = responses.get("horario");
-                String bloco = responses.get("bloco");
-                String andar = responses.get("andar");
-                String area = responses.get("area");
-                String categoria = responses.get("categoria");
-                String subcategoria = responses.get("subcategoria");
-                String urgencia = responses.get("urgencia");
-                String sintoma = responses.get("sintoma");
-                String resumo = responses.get("resumo");
-                String descricao = responses.get("descricao");
-
-                chamadoService.criarChamado(
-                    telefoneLimpo, horario, bloco, andar, area, categoria,
-                    subcategoria, urgencia, sintoma, resumo, descricao
-                );
-            } catch (Exception e) {
-                System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
-            }
-
-
-
+                try {
+                    String telefoneOriginal = responses.get("telefone");
+                    String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa aqui de novo para garantir
+                    
+                    String horario = responses.get("horario");
+                    String bloco = responses.get("bloco");
+                    String andar = responses.get("andar");
+                    String area = responses.get("area");
+                    String categoria = responses.get("categoria");
+                    String subcategoria = responses.get("subcategoria");
+                    String urgencia = responses.get("urgencia");
+                    String sintoma = responses.get("sintoma");
+                    String resumo = responses.get("resumo");
+                    String descricao = responses.get("descricao");
+                    
+                    chamadoService.criarChamado(
+                            telefoneLimpo, horario, bloco, andar, area, categoria,
+                            subcategoria, urgencia, sintoma, resumo, descricao
+                    );
+                } catch (Exception e) {
+                    System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
+                }
+                
+                
+                
                 // Limpa estado e oferece nova ação
                 userStep.put(user, 999); // menu extra
-                return "✅ Chamado finalizado com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
+                return "✅ Chamado aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
+            }
             
-            case 999:
+            case 999 -> {
                 return processarMenuInicial(user, message.trim());
+            }
 
-            default:
+            default -> {
                 userStep.remove(user);
                 userResponses.remove(user);
                 userModes.remove(user);
                 return "❗ Conversa reiniciada. Digite 'menu' para começar.";
+            }
         }
     }
 
     private String processarMenuInicial(String user, String input) {
         switch (input) {
-            case "1":
+            case "1" -> {
                 userModes.put(user, MODO_CHAMADO);
                 userStep.put(user, 0);
                 userResponses.put(user, new LinkedHashMap<>());
                 return processUserMessage(user, "");
-            case "2":
+            }
+            case "2" -> {
                 userModes.put(user, MODO_ATENDENTE);
                 return "📞 Um atendente será acionado. Aguarde o contato.";
-            case "3":
+            }
+            case "3" -> {
                 userModes.put(user, MODO_INFO);
-                return "📌 Informações da T.I:\n- Atendimento de segunda a sexta, das 08h às 18h\n- Suporte emergencial: ramal 1234\n- Email: suporte@hospital.com";
-            default:
+                return "📌 Informações da T.I:\n- Atendimento 24h\n- Suporte emergencial: ramal 4423 ou 4425\n- Email: tihugo@einstein.br";
+            }
+            default -> {
                 return getMenuInicial();
+            }
         }
     }
 
     private String getMenuInicial() {
-        return "👋 Olá! Como posso te ajudar?\n\n1 - Abrir chamado\n2 - Falar com atendente\n3 - Informações sobre a T.I";
+        return "👋 Bem vindo(a) ao Suporte HUGO! Como podemos te ajudar?\n\n1 - Abrir chamado\n2 - Falar com atendente\n3 - Informações sobre a T.I\n Em caso de algum erro no preenchimento digitar 'menu' para voltar ao menu inicial";
     }
 
     private String buildOptionsMessage(String prompt, List<String> options) {
