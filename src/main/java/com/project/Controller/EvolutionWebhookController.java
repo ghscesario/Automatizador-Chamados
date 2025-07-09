@@ -52,16 +52,18 @@ public class EvolutionWebhookController {
         if (remoteJid == null) {
             return ResponseEntity.ok("Número remoto não informado");
         }
-        // Extrai número sem sufixo
-        String userNumber = remoteJid.replace("@s.whatsapp.net", "");
 
+        String userNumber = remoteJid.replace("@s.whatsapp.net", "");
         System.out.println("Recebido do usuário " + userNumber + ": " + text);
 
-        // Passa o número e texto para processar a conversa
         String resposta = conversationService.processUserMessage(userNumber, text);
 
-        // Envia a resposta para o mesmo número do usuário
-        evolutionApiService.sendTextMessage(userNumber, resposta);
+        // Se o modo for "atendente", o serviço retorna null e nenhuma mensagem é enviada
+        if (resposta != null && !resposta.trim().isEmpty()) {
+            evolutionApiService.sendTextMessage("test2", userNumber, resposta);
+        } else {
+            System.out.println("Modo silencioso ou sem resposta necessária.");
+        }
 
         return ResponseEntity.ok("Mensagem processada");
     }

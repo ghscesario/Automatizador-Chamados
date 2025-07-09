@@ -167,12 +167,12 @@ public class ChamadoService {
             // Descrição Curta
             page.waitForSelector("textarea[name='short_description']");
             Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("teste 3");
+            inputResumo.fill(descResumo);
             
             // Descrição detalhada
             page.waitForSelector("textarea[name='description']");
             Locator inputDescricao = page.locator("textarea[name='description']");
-            inputDescricao.fill("teste");
+            inputDescricao.fill(descDetalhada);
 
             Locator botaoEnviar = page.locator("#submit-btn");
 

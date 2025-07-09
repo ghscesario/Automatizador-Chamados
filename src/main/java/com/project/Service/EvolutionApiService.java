@@ -22,10 +22,8 @@ public class EvolutionApiService {
     @Value("${evolutionapi.api-key}")
     private String apiKey;
 
-    @Value("${evolutionapi.instance-id}")
-    private String instanceId;
-
-    public void sendTextMessage(String number, String text) {
+    // ✅ Corrigir aqui: método com 3 parâmetros
+    public void sendTextMessage(String instanceId, String number, String text) {
         if (text == null || text.trim().isEmpty()) {
             System.out.println("Mensagem vazia. Ignorando envio.");
             return;
