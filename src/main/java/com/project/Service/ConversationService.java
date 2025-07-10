@@ -215,25 +215,15 @@ public class ConversationService {
             case 10 -> {
                 responses.put("descricao", message.trim());
 
-                // Impressão dos dados no console
-                System.out.println("\n--- DADOS COLETADOS DO USUÁRIO " + user + " ---");
-                System.out.println("Telefone: " + responses.get("telefone"));
-                System.out.println("Horário: " + responses.get("horario"));
-                System.out.println("Bloco: " + responses.get("bloco"));
-                System.out.println("Andar: " + responses.get("andar"));
-                System.out.println("Área: " + responses.get("area"));
-                System.out.println("Categoria: " + responses.get("categoria"));
-                System.out.println("Subcategoria: " + responses.get("subcategoria"));
-                System.out.println("Urgência: " + responses.get("urgencia"));
-                System.out.println("Sintoma: " + responses.get("sintoma"));
-                System.out.println("Resumo: " + responses.get("resumo"));
-                System.out.println("Descrição detalhada: " + responses.get("descricao"));
-                System.out.println("-----------------------------");
+                // Envia mensagem de "Aguardando"
+                userStep.put(user, 11); // Próximo passo: realmente criar o chamado
+                return "🛠️ Abrindo chamado, aguarde...";
+            }
 
-                // Chamada ao serviço Playwright para abrir o chamado
+            case 11 -> {
                 try {
                     String telefoneOriginal = responses.get("telefone");
-                    String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa aqui de novo para garantir
+                    String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa novamente, por segurança
                     
                     String horario = responses.get("horario");
                     String bloco = responses.get("bloco");
@@ -245,17 +235,16 @@ public class ConversationService {
                     String sintoma = responses.get("sintoma");
                     String resumo = responses.get("resumo");
                     String descricao = responses.get("descricao");
-                    
+
                     chamadoService.criarChamado(
-                            telefoneLimpo, horario, bloco, andar, area, categoria,
-                            subcategoria, urgencia, sintoma, resumo, descricao
+                        telefoneLimpo, horario, bloco, andar, area, categoria,
+                        subcategoria, urgencia, sintoma, resumo, descricao
                     );
                 } catch (Exception e) {
                     System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
+                    return "❌ Ocorreu um erro ao abrir o chamado. Tente novamente mais tarde ou digite 'menu'.";
                 }
-                
-                
-                
+
                 // Limpa estado e oferece nova ação
                 userStep.put(user, 999); // menu extra
                 return "✅ Chamado aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
