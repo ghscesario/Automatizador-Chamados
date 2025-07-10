@@ -5,10 +5,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ConversationService {
+
+    @Autowired
+    private final EvolutionApiService evolutionApiService;
 
     private final ChamadoService chamadoService;
 
@@ -58,6 +62,7 @@ public class ConversationService {
 
     ConversationService(ChamadoService chamadoService) {
         this.chamadoService = chamadoService;
+        this.evolutionApiService = null;
     }
 
     public String processUserMessage(String user, String message) {
@@ -216,38 +221,51 @@ public class ConversationService {
                 responses.put("descricao", message.trim());
 
                 // Envia mensagem de "Aguardando"
-                userStep.put(user, 11); // Próximo passo: realmente criar o chamado
+                userStep.put(user, 11); // Definimos o próximo passo para controle, mesmo que não vá ser usado
+
+                // Executa abertura de chamado em background
+                new Thread(() -> {
+                    try {
+                        String telefoneOriginal = responses.get("telefone");
+                        String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa novamente, por segurança
+
+                        String horario = responses.get("horario");
+                        String bloco = responses.get("bloco");
+                        String andar = responses.get("andar");
+                        String area = responses.get("area");
+                        String categoria = responses.get("categoria");
+                        String subcategoria = responses.get("subcategoria");
+                        String urgencia = responses.get("urgencia");
+                        String sintoma = responses.get("sintoma");
+                        String resumo = responses.get("resumo");
+                        String descricao = responses.get("descricao");
+
+                        chamadoService.criarChamado(
+                            telefoneLimpo, horario, bloco, andar, area, categoria,
+                            subcategoria, urgencia, sintoma, resumo, descricao
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
+                    }
+
+                    // Atualiza passo para menu final
+                    userStep.put(user, 999);
+                    userModes.put(user, MODO_CHAMADO); // Garante permanência no modo até terminar
+
+                    // Envia a mensagem final para o usuário
+                    String numero = responses.get("telefone");
+                    String mensagemFinal = "✅ Chamado aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
+
+                    // Aqui é necessário um meio de envio manual — você pode injetar o `EvolutionApiService` para isso:
+                    try {
+                        evolutionApiService.sendTextMessage("test2", numero, mensagemFinal);
+                    } catch (Exception e) {
+                        System.err.println("Erro ao enviar mensagem final: " + e.getMessage());
+                    }
+
+                }).start();
+
                 return "🛠️ Abrindo chamado, aguarde...";
-            }
-
-            case 11 -> {
-                try {
-                    String telefoneOriginal = responses.get("telefone");
-                    String telefoneLimpo = limparTelefone(telefoneOriginal);  // Limpa novamente, por segurança
-                    
-                    String horario = responses.get("horario");
-                    String bloco = responses.get("bloco");
-                    String andar = responses.get("andar");
-                    String area = responses.get("area");
-                    String categoria = responses.get("categoria");
-                    String subcategoria = responses.get("subcategoria");
-                    String urgencia = responses.get("urgencia");
-                    String sintoma = responses.get("sintoma");
-                    String resumo = responses.get("resumo");
-                    String descricao = responses.get("descricao");
-
-                    chamadoService.criarChamado(
-                        telefoneLimpo, horario, bloco, andar, area, categoria,
-                        subcategoria, urgencia, sintoma, resumo, descricao
-                    );
-                } catch (Exception e) {
-                    System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
-                    return "❌ Ocorreu um erro ao abrir o chamado. Tente novamente mais tarde ou digite 'menu'.";
-                }
-
-                // Limpa estado e oferece nova ação
-                userStep.put(user, 999); // menu extra
-                return "✅ Chamado aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
             }
             
             case 999 -> {
