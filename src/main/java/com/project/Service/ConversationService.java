@@ -258,7 +258,7 @@ public class ConversationService {
 
                     // Aqui é necessário um meio de envio manual — você pode injetar o `EvolutionApiService` para isso:
                     try {
-                        evolutionApiService.sendTextMessage("test2", numero, mensagemFinal);
+                        evolutionApiService.sendTextMessage("teste", numero, mensagemFinal);
                     } catch (Exception e) {
                         System.err.println("Erro ao enviar mensagem final: " + e.getMessage());
                     }
@@ -279,12 +279,12 @@ public class ConversationService {
                 return "❗ Conversa reiniciada. Digite 'menu' para começar.";
             }
         }
-    }
+    } 
 
     private String processarMenuInicial(String user, String input) {
         switch (input) {
             case "1" -> {
-                userModes.put(user, MODO_CHAMADO);
+                userModes.put(user, MODO_CHAMADO); 
                 userStep.put(user, 0);
                 userResponses.put(user, new LinkedHashMap<>());
                 return processUserMessage(user, "");

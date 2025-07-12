@@ -18,9 +18,9 @@ public class ChamadoController {
     @Autowired
     private PrinterMonitorService printerMonitorService;
 
-    @GetMapping("/chamar")
+    @GetMapping("/chamarTeste")
     public void chamarAutomatizador(){
-        chamadoService.criarChamadoPadrao();
+        chamadoService.criarChamadoTeste();
     }
 
     @GetMapping("/verificarToner")

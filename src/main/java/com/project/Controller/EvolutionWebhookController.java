@@ -66,7 +66,7 @@ public class EvolutionWebhookController {
 
         // Se o modo for "atendente", o serviço retorna null e nenhuma mensagem é enviada
         if (resposta != null && !resposta.trim().isEmpty()) {
-            evolutionApiService.sendTextMessage("test2", userNumber, resposta);
+            evolutionApiService.sendTextMessage("teste", userNumber, resposta);
         } else {
             System.out.println("Modo silencioso ou sem resposta necessária.");
         }

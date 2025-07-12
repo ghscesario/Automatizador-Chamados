@@ -2,6 +2,7 @@ package com.project.Service;
 
 import java.nio.file.Paths;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.microsoft.playwright.Browser;
@@ -10,9 +11,14 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.project.Model.Chamado;
+import com.project.Repository.ChamadoRepository;
 
 @Service
 public class ChamadoService {
+
+    @Autowired
+    private ChamadoRepository chamadoRepository;
 
     // RODAR UMA VEZ PARA SALVAR A SESSÃO
     public void salvarSessao() {
@@ -38,7 +44,9 @@ public class ChamadoService {
     }
 
     // EXECUTAR SEM LOGIN
-    public void criarChamadoPadrao() {
+    public void criarChamado(String telefone, String horario, String bloco, String andar, String area, String categoria, String subCategoria, String urgencia, String sintoma, String descResumo, String descDetalhada) {
+        boolean sucesso = false;
+
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
                 .launch(new BrowserType.LaunchOptions().setHeadless(false));
@@ -52,147 +60,131 @@ public class ChamadoService {
 
             // TELEFONE
             page.waitForSelector("input[name='telefone_celular']");
-            Locator inputTelefone = page.locator("input[name='telefone_celular']");
-            inputTelefone.fill("1199999999");
+            page.locator("input[name='telefone_celular']").fill(telefone);
 
             // HORÁRIO TRABALHO
             page.waitForSelector("input[name='horario_escala_trabalho']");
-            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
-            inputHorario.fill("24h");
+            page.locator("input[name='horario_escala_trabalho']").fill(horario);
 
-            // Selecionar Unidade (digitação e seleção)
             selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page, bloco);
+            selecionarAndar(page, andar);
+            selecionarArea(page, area);
+            selecionarCategoria(page, categoria);
+            selecionarSubCategoria(page, subCategoria);
+            selecionarCentroCusto(page, "ORTI");
+            selecionarUrgencia(page, urgencia);
+            selecionarSintoma(page, sintoma);
 
-            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
-            selecionarBloco(page, "HOSPITAL");
-
-            //Selecionar Andar
-            selecionarAndar(page, "1º ANDAR");
-
-            //Selecionar Área
-            selecionarArea(page, "CENTRO CIRUGICO CORREDORES");         
-
-            //Selecionar Categoria
-            selecionarCategoria(page, "Equipamentos de TI");
-
-            //Selecionar Sub Categoria
-            selecionarSubCategoria(page, "Desktop");
-
-            //Selecionar Centro de Custo
-            selecionarCentroCusto(page, "CMHG");
-
-            //Selecionar Urgencia
-            selecionarUrgencia(page, "Poucos equipamentos");
-
-            //Selecionar Sintoma
-            selecionarSintoma(page, "Falha");
-
-            // Descrição Curta
-            page.waitForSelector("textarea[name='short_description']");
-            Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("teste 4 08/07/2025");
-            
-            // Descrição detalhada
-            page.waitForSelector("textarea[name='description']");
-            Locator inputDescricao = page.locator("textarea[name='description']");
-            inputDescricao.fill("teste");
+            page.locator("textarea[name='short_description']").fill(descResumo);
+            page.locator("textarea[name='description']").fill(descDetalhada);
 
             Locator botaoEnviar = page.locator("#submit-btn");
-
-            // Aguarda o botão estar visível e habilitado
             botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-
-            // Clica no botão
             botaoEnviar.click();
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
-
-            System.out.println("Chamado criado com sucesso.");
+            sucesso = true;
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado:");
         }
-    }
 
-
-    // EXECUTAR SEM LOGIN
-    public void criarChamado(String telefone, String horario, String bloco, String andar, String area, String categoria, String subCategoria, String urgencia, String sintoma, String descResumo, String descDetalhada) {
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
-
-            BrowserContext context = browser.newContext(
-                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
-            );
-
-            Page page = context.newPage();
-            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
-
-            // TELEFONE
-            page.waitForSelector("input[name='telefone_celular']");
-            Locator inputTelefone = page.locator("input[name='telefone_celular']");
-            inputTelefone.fill(telefone);
-
-            // HORÁRIO TRABALHO
-            page.waitForSelector("input[name='horario_escala_trabalho']");
-            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
-            inputHorario.fill(horario);
-
-            // Selecionar Unidade (digitação e seleção)
-            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
-
-            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
-            selecionarBloco(page, bloco);
-
-            //Selecionar Andar
-            selecionarAndar(page, andar);
-
-            //Selecionar Área
-            selecionarArea(page, area);         
-
-            //Selecionar Categoria
-            selecionarCategoria(page, categoria);
-
-            //Selecionar Sub Categoria
-            selecionarSubCategoria(page, subCategoria);
-
-            //Selecionar Centro de Custo
-            selecionarCentroCusto(page, "ORTI");
-
-            //Selecionar Urgencia
-            selecionarUrgencia(page, urgencia);
-
-            //Selecionar Sintoma
-            selecionarSintoma(page, sintoma);
-
-            // Descrição Curta
-            page.waitForSelector("textarea[name='short_description']");
-            Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill(descResumo);
-            
-            // Descrição detalhada
-            page.waitForSelector("textarea[name='description']");
-            Locator inputDescricao = page.locator("textarea[name='description']");
-            inputDescricao.fill(descDetalhada);
-
-            Locator botaoEnviar = page.locator("#submit-btn");
-
-            // Aguarda o botão estar visível e habilitado
-            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-
-            // Clica no botão
-            botaoEnviar.click();
-
-            System.out.println("Clique em 'Enviar Solicitação' realizado.");
-
-            System.out.println("Chamado criado com sucesso.");
-        } catch (Exception e) {
-            System.err.println("Erro ao criar o chamado:");
+        if (sucesso) {
+            Chamado chamado = new Chamado();
+            chamado.setTelefone(telefone);
+            chamado.setHorario(horario);
+            chamado.setBloco(bloco);
+            chamado.setAndar(andar);
+            chamado.setArea(area);
+            chamado.setCategoria(categoria);
+            chamado.setSubcategoria(subCategoria);
+            chamado.setUrgencia(urgencia);
+            chamado.setSintoma(sintoma);
+            chamado.setResumo(descResumo);
+            chamado.setDescricao(descDetalhada);
+            chamadoRepository.save(chamado);
+            System.out.println("Chamado registrado no banco de dados com sucesso.");
         }
     }
 
     // EXECUTAR SEM LOGIN
     public void criarChamadoImpressora(String ip) {
+    boolean sucesso = false;
+
+    // Playwright: cria o chamado no Service‑Now
+    try (Playwright playwright = Playwright.create()) {
+        Browser browser = playwright.chromium()
+            .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+        BrowserContext context = browser.newContext(
+            new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+        );
+
+        Page page = context.newPage();
+        page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+        page.locator("input[name='telefone_celular']").fill("1199999999");
+        page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
+
+        selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+        selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
+        selecionarAndar(page,         "TÉRREO");
+        selecionarArea(page,          "T.I");
+        selecionarCategoria(page,     "Impressoras");
+        selecionarSubCategoria(page,  "Impressora de papel");
+        selecionarCentroCusto(page,   "CMHG");
+        selecionarUrgencia(page,      "O meu departamento e não");
+        selecionarSintoma(page,       "Indisponibilidade");
+
+        String resumo   = "Troca de toner, impressora: " + ip + " (BOT)"; 
+        String detalhado = "Sistema automatizado identificou na varredura que a impressora: " + ip +
+                           ", necessita da substituição do toner!";
+
+        page.locator("textarea[name='short_description']").fill(resumo);
+        page.locator("textarea[name='description']").fill(detalhado);
+
+        Locator botaoEnviar = page.locator("#submit-btn");
+        botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+        botaoEnviar.click();
+
+        System.out.println("Clique em 'Enviar Solicitação' realizado.");
+        sucesso = true;
+    } catch (Exception e) {
+        System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
+    }
+
+    // Persistir no banco só se o passo 1 deu certo
+    if (sucesso) {
+        Chamado c = new Chamado();
+        c.setTelefone("1199999999");
+        c.setHorario("(BOT)");
+        c.setBloco("BLOCO ADMINISTRATIVO");
+        c.setAndar("TÉRREO");
+        c.setArea("T.I");
+        c.setCategoria("Impressoras");
+        c.setSubcategoria("Impressora de papel");
+        c.setUrgencia("O meu departamento e não");
+        c.setSintoma("Indisponibilidade");
+        c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
+        c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
+                                ", necessita da substituição do toner!");
+
+        try {
+            chamadoRepository.save(c);
+            System.out.println("Chamado salvo no banco!");
+        } catch (Exception e) {
+            System.err.println("Falha ao salvar no banco: " + e.getMessage());
+        }
+    }
+}
+
+
+    public void criarChamadoTeste() {
+
+        // Executa o Playwright
+        boolean sucesso = false;
         try (Playwright playwright = Playwright.create()) {
+
             Browser browser = playwright.chromium()
                 .launch(new BrowserType.LaunchOptions().setHeadless(false));
 
@@ -203,66 +195,57 @@ public class ChamadoService {
             Page page = context.newPage();
             page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
 
-            // TELEFONE
+            /* ‑‑‑‑‑ preenchimento do formulário ‑‑‑‑‑ */
             page.waitForSelector("input[name='telefone_celular']");
-            Locator inputTelefone = page.locator("input[name='telefone_celular']");
-            inputTelefone.fill("1199999999");
+            page.locator("input[name='telefone_celular']").fill("1199999999");
 
-            // HORÁRIO TRABALHO
             page.waitForSelector("input[name='horario_escala_trabalho']");
-            Locator inputHorario = page.locator("input[name='horario_escala_trabalho']");
-            inputHorario.fill("(BOT)");
+            page.locator("input[name='horario_escala_trabalho']").fill("24h");
 
-            // Selecionar Unidade (digitação e seleção)
-            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarUnidade(page,        "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page,          "HOSPITAL");
+            selecionarAndar(page,          "1º ANDAR");
+            selecionarArea(page,           "CENTRO CIRUGICO CORREDORES");
+            selecionarCategoria(page,      "Equipamentos de TI");
+            selecionarSubCategoria(page,   "Desktop");
+            selecionarCentroCusto(page,    "CMHG");
+            selecionarUrgencia(page,       "Poucos equipamentos");
+            selecionarSintoma(page,        "Falha");
 
-            // Selecionar Bloco (abre dropdown e confirma primeira opção com Enter)
-            selecionarBloco(page, "BLOCO ADMINISTRATIVO");
-
-            //Selecionar Andar
-            selecionarAndar(page, "TÉRREO");
-
-            //Selecionar Área
-            selecionarArea(page, "T.I");         
-
-            //Selecionar Categoria
-            selecionarCategoria(page, "Impressoras");
-
-            //Selecionar Sub Categoria
-            selecionarSubCategoria(page, "Impressora de papel");
-
-            //Selecionar Centro de Custo
-            selecionarCentroCusto(page, "CMHG");
-
-            //Selecionar Urgencia
-            selecionarUrgencia(page, "O meu departamento e não");
-
-            //Selecionar Sintoma
-            selecionarSintoma(page, "Indisponibilidade");
-
-            // Descrição Curta
-            page.waitForSelector("textarea[name='short_description']");
-            Locator inputResumo = page.locator("textarea[name='short_description']");
-            inputResumo.fill("Troca de toner, impressora: "+ip+" (BOT)");
-            
-            // Descrição detalhada
-            page.waitForSelector("textarea[name='description']");
-            Locator inputDescricao = page.locator("textarea[name='description']");
-            inputDescricao.fill("Sistema automatizado identificou na varredura que a impressora: "+ip+", necessita da substituição do toner!");
+            page.locator("textarea[name='short_description']").fill("teste 4 08/07/2025");
+            page.locator("textarea[name='description']").fill("teste");
 
             Locator botaoEnviar = page.locator("#submit-btn");
-
-            // Aguarda o botão estar visível e habilitado
             botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-
-            // Clica no botão
             botaoEnviar.click();
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
-
-            System.out.println("Chamado criado com sucesso.");
+            sucesso = true;                           // ← chegou até aqui sem exceção
         } catch (Exception e) {
-            System.err.println("Erro ao criar o chamado:");
+            System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
+        }
+
+        // Persistir no banco apenas se deu certo
+        if (sucesso) {
+            Chamado c = new Chamado();
+            c.setTelefone("1199999999");
+            c.setHorario("24h");
+            c.setBloco("HOSPITAL");
+            c.setAndar("1º ANDAR");
+            c.setArea("CENTRO CIRUGICO CORREDORES");
+            c.setCategoria("Equipamentos de TI");
+            c.setSubcategoria("Desktop");
+            c.setUrgencia("Poucos equipamentos");
+            c.setSintoma("Falha");
+            c.setResumo("teste 4 08/07/2025");
+            c.setDescricao("teste");
+
+            try {
+                chamadoRepository.save(c);
+                System.out.println("Chamado salvo no banco!");
+            } catch (Exception e) {
+                System.err.println("Falha ao salvar no banco: " + e.getMessage());
+            }
         }
     }
 

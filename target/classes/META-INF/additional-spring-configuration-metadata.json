@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "evolutionapi.base-url",
+    "type": "java.lang.String",
+    "description": "URL para apontamento da API Evolution"
+  },
+  {
+    "name": "evolutionapi.api-key",
+    "type": "java.lang.String",
+    "description": "Key da API Evolution"
+  },
+  {
+    "name": "evolutionapi.instance-id",
+    "type": "java.lang.String",
+    "description": "Nome da instância rodando no EvolutionAPI"
+  }
+]}
