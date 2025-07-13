@@ -13,5 +13,6 @@ import lombok.Setter;
 public class WhiteList {
     @Id
     private String numero;
-    private String observacao;
+    private String cargo;
+    private String nome;
 }

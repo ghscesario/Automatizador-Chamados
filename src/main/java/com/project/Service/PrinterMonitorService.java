@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,194 +18,207 @@ import org.springframework.stereotype.Service;
 @Service
 public class PrinterMonitorService {
 
-    @Autowired
-    private ChamadoService chamadoService;
+    @Autowired private ChamadoService chamadoService;
 
+    /* --------- RICOH SP3710 --------- */
     private final List<String> printerIps = List.of(
-        "10.239.20.12",
-        "10.239.20.15",
-        "10.239.20.16",
-        "10.239.20.17",
-        "10.239.20.18",
-        "10.239.20.19",
-        "10.239.20.20",
-        "10.239.20.21",
-        "10.239.20.22",
-        "10.239.20.23",
-        "10.239.20.24",
-        "10.239.20.25",
-        "10.239.20.26",
-        "10.239.20.27",
-        "10.239.20.28",
-        "10.239.20.30",
-        "10.239.20.31",
-        "10.239.20.32",
-        "10.239.20.33",
-        "10.239.20.34",
-        "10.239.20.35",
-        "10.239.20.36",
-        "10.239.20.37",
-        "10.239.20.38",
-        "10.239.20.39",
-        "10.239.20.40",
-        "10.239.20.41",
-        "10.239.20.42",
-        "10.239.20.43",
-        "10.239.20.44",
-        "10.239.20.45",
-        "10.239.20.46",
-        "10.239.20.47",
-        "10.239.20.48",
-        "10.239.20.49",
-        "10.239.20.50",
-        "10.239.20.51",
-        "10.239.20.52",
-        "10.239.20.55",
-        "10.239.20.56",
-        "10.239.20.57",
-        "10.239.20.58",
-        "10.239.20.59",
-        "10.239.20.60",
-        "10.239.20.61",
-        "10.239.20.62",
-        "10.239.20.63",
-        "10.239.20.64",
-        "10.239.20.66",
-        "10.239.20.67",
-        "10.239.20.68",
-        "10.239.20.69",
-        "10.239.20.70",
-        "10.239.20.71",
-        "10.239.20.72",
-        "10.239.20.73",
-        "10.239.20.74",
-        "10.239.20.75",
-        "10.239.20.76",
-        "10.239.20.77",
-        "10.239.20.78",
-        "10.239.20.79",
-        "10.239.20.80",
-        "10.239.20.81",
-        "10.239.20.82",
-        "10.239.20.83",
-        "10.239.20.84",
-        "10.239.20.85",
-        "10.239.20.86",
-        "10.239.20.87",
-        "10.239.20.88",
-        "10.239.20.89",
-        "10.239.20.90",
-        "10.239.20.91",
-        "10.239.20.92",
-        "10.239.20.93",
-        "10.239.20.94",
-        "10.239.20.95",
-        "10.239.20.97",
-        "10.239.20.98",
-        "10.239.20.99",
-        "10.239.20.205",
-        "10.239.20.206",
-        "10.239.20.207",
-        "10.239.20.208",
-        "10.239.20.209"
+        "10.239.20.12","10.239.20.15","10.239.20.70"
+        
     );
 
-    // Conjunto thread-safe para IPs com chamado aberto
-    private final Set<String> impressorasComChamadoAberto = ConcurrentHashMap.newKeySet();
+    /* --------- LISTA de Ricoh MP C3003/C3004 --------- */
+    private final List<String> ricohC3003Ips = List.of(
+        "10.239.20.30", // C3003
+        "10.239.20.81"  // C3004
+    );
 
+    private final Set<String> impressorasComChamadoAberto = ConcurrentHashMap.newKeySet();
+    private static final int LIMITE_CHAMADO = 25;
+
+    /* ----------RICOH SP3710---------- */
     @Scheduled(fixedRate = 1800000)
+    @SuppressWarnings("CallToPrintStackTrace")
     public void checkAllPrinters() {
-        for (String ip : printerIps) {
+        printerIps.forEach(ip -> tryRun(() -> {
             try {
-                checkPrinter(ip);
+                checkPrinterPreto(ip);
             } catch (Exception e) {
-                System.err.println("Erro ao verificar IP: " + ip + " → " + e.getMessage());
+                System.out.println("Impressora de ip: "+ip+" se encontra indisponível ou offline!");
             }
+        }, ip));
+        ricohC3003Ips.forEach(ip -> tryRun(() -> {
+            try {
+                checkPrinterC3003(ip);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, ip));
+    }
+    private void tryRun(Runnable r, String ip){
+        try { r.run(); } catch(Exception e){
+            System.err.printf("Erro IP %s → %s%n", ip, e.getMessage());
         }
     }
 
-    public void checkPrinter(String ip) throws Exception {
-        // Se já tem chamado aberto, verifica só se o toner recuperou
-        if (impressorasComChamadoAberto.contains(ip)) {
-            Document doc = getHtmlIgnoringSSL("https://" + ip + "/main.asp?Lang=en-us");
-            Element tonerTable = doc.selectFirst("table.toner");
-
-            int percent = 0;
-            if (tonerTable != null) {
-                String widthAttr = tonerTable.attr("width");
-                percent = parsePercent(widthAttr);
-            }
-            if (percent >= 10) {
-                impressorasComChamadoAberto.remove(ip);
-                System.out.println("IP " + ip + " - Nível de toner recuperado (" + percent + "%). Monitoramento normal retomado.");
-            } else {
-                System.out.println("IP " + ip + " - Chamado já aberto. Toner em " + percent + "%. Aguardando recuperação.");
-            }
-            return;
+    /* =====================================================
+       IMPRESSORAS PRETO / KYOCERA / EPSON
+       ===================================================== */
+    private void checkPrinterPreto(String ip) throws Exception {
+        int pct = extrairTonerPreto(ip);
+        if (pct == -1) { 
+            System.out.printf("IP %s sem leitura%n", ip); 
+            return; 
         }
 
-        // Fluxo normal para impressora sem chamado aberto
-        String url = "https://" + ip + "/main.asp?Lang=en-us";
-
-        Document doc;
-        try {
-            doc = getHtmlIgnoringSSL(url);
-        } catch (Exception e) {
-            throw new Exception("Falha ao acessar IP " + ip + ": " + e.getMessage());
-        }
-
-        Element tonerTable = doc.selectFirst("table.toner");
-
-        if (tonerTable == null) {
-            int nivel = 0; // assume toner vazio
-            System.out.println("IP " + ip + " - Barra de toner não encontrada. Possivelmente toner vazio (0%).");
-            abrirChamado(ip, nivel);
-            impressorasComChamadoAberto.add(ip);
-            return;
-        }
-
-        String widthAttr = tonerTable.attr("width");
-        int percent = parsePercent(widthAttr);
-
-        if (percent >= 0) {
-            System.out.println("IP " + ip + " - Toner preto em " + percent + "%");
-            if (percent < 25) {
-                abrirChamado(ip, percent);
+        if (pct == 0) { // acessível mas sem barra de toner
+            System.out.printf("IP %s sem barra de toner. Abrindo chamado.%n", ip);
+            if (!impressorasComChamadoAberto.contains(ip)) {
+                abrirChamado(ip, 0);
                 impressorasComChamadoAberto.add(ip);
             }
-        } else {
-            System.out.println("IP " + ip + " - Não foi possível extrair a porcentagem do toner.");
+            return;
+        }
+
+        if (impressorasComChamadoAberto.contains(ip)) {
+            if (pct >= LIMITE_CHAMADO) {
+                impressorasComChamadoAberto.remove(ip);
+                System.out.printf("IP %s Toner recuperado (%d%%).%n", ip, pct);
+            }
+            return;
+        }
+        System.out.printf("IP %s Toner preto %d%%%n", ip, pct);
+        if (pct < LIMITE_CHAMADO) {
+            abrirChamado(ip, pct);
+            impressorasComChamadoAberto.add(ip);
+        }
+    }
+    private int extrairTonerPreto(String ip) throws Exception {
+        Document doc = fetchFirstAvailable(
+            "https://"+ip+"/main.asp?Lang=en-us", "http://"+ip+"/main.asp?Lang=en-us",
+            "https://"+ip+"/", "http://"+ip+"/"
+        );
+        Element t = doc.selectFirst("table.toner");
+        if (t != null) return parsePercent(t.attr("width"));
+        Element k = doc.selectFirst("td[data-bind*=PaperLevel]");
+        if (k != null) return parsePercent(k.text());
+        return 0;  // acessível mas sem barra de toner
+    }
+
+    /* =====================================================
+       RICOH MP C3003 / C3004 – 4 cores
+       ===================================================== */
+    private void checkPrinterC3003(String ip) throws Exception {
+        ColorLevels cl = extrairTonerRicohC3003(ip);
+        int menor = cl.menor();
+        if (menor == -1) {
+            System.out.printf("IP %s sem leitura%n", ip);
+            return;
+        }
+
+        boolean aberto = impressorasComChamadoAberto.contains(ip);
+        System.out.printf("IP %s %s %s%n", ip, cl, aberto ? "(Chamado aberto)" : "");
+
+        // Monta a string com as cores abaixo do limite
+        StringBuilder coresAbaixo = new StringBuilder();
+        if (cl.bk >= 0 && cl.bk < LIMITE_CHAMADO) coresAbaixo.append("Preto, ");
+        if (cl.c >= 0 && cl.c < LIMITE_CHAMADO) coresAbaixo.append("Ciano, ");
+        if (cl.m >= 0 && cl.m < LIMITE_CHAMADO) coresAbaixo.append("Magenta, ");
+        if (cl.y >= 0 && cl.y < LIMITE_CHAMADO) coresAbaixo.append("Amarelo, ");
+
+        // Remove a última vírgula e espaço, se houver
+        String coresStr = "";
+        if (coresAbaixo.length() > 0) {
+            coresStr = coresAbaixo.substring(0, coresAbaixo.length() - 2);
+        }
+
+        if (aberto) {
+            // Se chamado aberto, só remove se todas as cores estiverem acima do limite
+            if (coresStr.isEmpty()) {
+                impressorasComChamadoAberto.remove(ip);
+                System.out.printf("IP %s Toners recuperados.%n", ip);
+            }
+            return;
+        }
+
+        if (!coresStr.isEmpty()) {
+            abrirChamadoColorido(ip, coresStr);
+            impressorasComChamadoAberto.add(ip);
         }
     }
 
+private void abrirChamadoColorido(String ip, String cores) {
+    System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
+    chamadoService.criarChamadoImpressoraColorida(ip, cores);
+}
+
+
+    private ColorLevels extrairTonerRicohC3003(String ip) throws Exception {
+        Document doc = fetchFirstAvailable(
+            "http://"+ip+"/web/guest/br/websys/webArch/getStatus.cgi#linkToner",
+            "https://"+ip+"/web/guest/br/websys/webArch/getStatus.cgi#linkToner"
+        );
+        Elements dls = doc.select("div.tonerArea").parents();
+        ColorLevels lv = new ColorLevels();
+        for(Element dl : dls){
+            Element img = dl.selectFirst("div.tonerArea img[src*=/images/deviceStTnBar]");
+            Element dt  = dl.selectFirst("dt.listboxdtm");
+            if(img == null || dt == null) continue;
+            int pct = (int)((parseIntSafe(img.attr("width")) / 160.0) * 100);
+            switch(dt.text().trim().toLowerCase()){
+                case "preto" -> lv.bk = pct;
+                case "ciano" -> lv.c = pct;
+                case "magenta" -> lv.m = pct;
+                case "amarelo" -> lv.y = pct;
+            }
+        }
+        return lv;
+    }
+    private static class ColorLevels{
+        int bk = -1, c = -1, m = -1, y = -1;
+        int menor(){ 
+            int min = 100;
+            if(bk >= 0) min = Math.min(min, bk);
+            if(c >= 0) min = Math.min(min, c);
+            if(m >= 0) min = Math.min(min, m);
+            if(y >= 0) min = Math.min(min, y);
+            return min;
+        }
+        @SuppressWarnings("override")
+        public String toString(){ 
+            return String.format("Preto %d%%, Ciano %d%%, Magenta %d%%, Amarelo %d%%", bk, c, m, y);
+        }
+    }
+
+    /* =====================================================
+       FERRAMENTAS GERAIS
+       ===================================================== */
     @SuppressWarnings("UseSpecificCatch")
-    private int parsePercent(String width) {
-        try {
-            return Integer.parseInt(width.replace("%", "").trim());
-        } catch (Exception e) {
-            System.err.println("Erro ao converter atributo width para número: " + e.getMessage());
-            return -1;
-        }
-    }
-
-    private void abrirChamado(String ip, int nivel) {
-        System.out.println("Abrindo chamado para IP " + ip + " com toner em " + nivel + "%");
-        //Descomentar linha abaixo para abrir chamados automaticamente quando os níveis de toner estiverem baixos
-        chamadoService.criarChamadoImpressora(ip);
-    }
-
-    private Document getHtmlIgnoringSSL(String url) throws Exception {
+    private Document fetchFirstAvailable(String... urls) throws Exception{
         SSLUtil.disableSSLCertificateChecking();
-
-        URL urlObj = new URL(url);
-        HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
-
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
-        connection.setInstanceFollowRedirects(true);
-
-        try (InputStream in = connection.getInputStream()) {
-            return Jsoup.parse(in, "UTF-8", url);
+        for(String u : urls){
+            try{
+                HttpURLConnection c = (HttpURLConnection)new URL(u).openConnection();
+                c.setConnectTimeout(4000); c.setReadTimeout(4000);
+                if(c.getResponseCode() >= 400) continue;
+                try(InputStream in = c.getInputStream()){
+                    return Jsoup.parse(in, "UTF-8", u);
+                }
+            }catch(Exception ignore){ }
         }
+        throw new Exception("Todas URLs falharam");
+    }
+    private int parsePercent(String v){ return parseIntSafe(v.replace("%","")); }
+    @SuppressWarnings("UseSpecificCatch")
+    private int parseIntSafe(String v){ 
+        try { 
+            return Integer.parseInt(v.trim()); 
+        } catch(Exception e){ 
+            return -1; 
+        } 
+    }
+
+    private void abrirChamado(String ip,int nivel){
+        System.out.printf("Chamado IP %s toner %d%%%n", ip, nivel);
+        chamadoService.criarChamadoImpressora(ip);
     }
 }

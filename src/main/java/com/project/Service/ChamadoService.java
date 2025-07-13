@@ -108,76 +108,124 @@ public class ChamadoService {
     }
 
     // EXECUTAR SEM LOGIN
-    public void criarChamadoImpressora(String ip) {
-    boolean sucesso = false;
+    public void criarChamadoImpressoraColorida(String ip, String cores) {
+        boolean sucesso = false;
 
-    // Playwright: cria o chamado no Service‑Now
-    try (Playwright playwright = Playwright.create()) {
-        Browser browser = playwright.chromium()
-            .launch(new BrowserType.LaunchOptions().setHeadless(false));
+        // Playwright: cria o chamado no Service‑Now
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
 
-        BrowserContext context = browser.newContext(
-            new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
-        );
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
 
-        Page page = context.newPage();
-        page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
 
-        page.locator("input[name='telefone_celular']").fill("1199999999");
-        page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
+            page.locator("input[name='telefone_celular']").fill("1199999999");
+            page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
-        selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
-        selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
-        selecionarAndar(page,         "TÉRREO");
-        selecionarArea(page,          "T.I");
-        selecionarCategoria(page,     "Impressoras");
-        selecionarSubCategoria(page,  "Impressora de papel");
-        selecionarCentroCusto(page,   "CMHG");
-        selecionarUrgencia(page,      "O meu departamento e não");
-        selecionarSintoma(page,       "Indisponibilidade");
+            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
+            selecionarAndar(page,         "TÉRREO");
+            selecionarArea(page,          "T.I");
+            selecionarCategoria(page,     "Impressoras");
+            selecionarSubCategoria(page,  "Impressora de papel");
+            selecionarCentroCusto(page,   "CMHG");
+            selecionarUrgencia(page,      "O meu departamento e não");
+            selecionarSintoma(page,       "Indisponibilidade");
 
-        String resumo   = "Troca de toner, impressora: " + ip + " (BOT)"; 
-        String detalhado = "Sistema automatizado identificou na varredura que a impressora: " + ip +
-                           ", necessita da substituição do toner!";
+            String resumo   = "Troca de toner, impressora: " + ip + " (BOT)"; 
+            String detalhado = "Sistema automatizado identificou na varredura que a impressora: " + ip +
+                            ", necessita da substituição do(s) toner(s): "+cores;
 
-        page.locator("textarea[name='short_description']").fill(resumo);
-        page.locator("textarea[name='description']").fill(detalhado);
+            page.locator("textarea[name='short_description']").fill(resumo);
+            page.locator("textarea[name='description']").fill(detalhado);
 
-        Locator botaoEnviar = page.locator("#submit-btn");
-        botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-        botaoEnviar.click();
+            Locator botaoEnviar = page.locator("#submit-btn");
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            botaoEnviar.click();
 
-        System.out.println("Clique em 'Enviar Solicitação' realizado.");
-        sucesso = true;
-    } catch (Exception e) {
-        System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
-    }
-
-    // Persistir no banco só se o passo 1 deu certo
-    if (sucesso) {
-        Chamado c = new Chamado();
-        c.setTelefone("1199999999");
-        c.setHorario("(BOT)");
-        c.setBloco("BLOCO ADMINISTRATIVO");
-        c.setAndar("TÉRREO");
-        c.setArea("T.I");
-        c.setCategoria("Impressoras");
-        c.setSubcategoria("Impressora de papel");
-        c.setUrgencia("O meu departamento e não");
-        c.setSintoma("Indisponibilidade");
-        c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
-        c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
-                                ", necessita da substituição do toner!");
-
-        try {
-            chamadoRepository.save(c);
-            System.out.println("Chamado salvo no banco!");
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
+            sucesso = true;
         } catch (Exception e) {
-            System.err.println("Falha ao salvar no banco: " + e.getMessage());
+            System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
         }
-    }
-}
 
+        // Persistir no banco só se o passo 1 deu certo
+         if (sucesso) {
+             Chamado c = new Chamado();
+             c.setTelefone("1199999999");
+             c.setHorario("(BOT)");
+             c.setBloco("BLOCO ADMINISTRATIVO");
+             c.setAndar("TÉRREO");
+             c.setArea("T.I");
+             c.setCategoria("Impressoras");
+             c.setSubcategoria("Impressora de papel");
+             c.setUrgencia("O meu departamento e não");
+             c.setSintoma("Indisponibilidade");
+             c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
+             c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
+                                     ", necessita da substituição do toner!");
+
+             try {
+                 chamadoRepository.save(c);
+                 System.out.println("Chamado salvo no banco!");
+             } catch (Exception e) {
+                 System.err.println("Falha ao salvar no banco: " + e.getMessage());
+             }
+         }
+    }
+
+    // EXECUTAR SEM LOGIN
+    public void criarChamadoImpressora(String ip) {
+        @SuppressWarnings("unused")
+        boolean sucesso = false;
+
+        // Playwright: cria o chamado no Service‑Now
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
+
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+            page.locator("input[name='telefone_celular']").fill("1199999999");
+            page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
+
+            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
+            selecionarAndar(page,         "TÉRREO");
+            selecionarArea(page,          "T.I");
+            selecionarCategoria(page,     "Impressoras");
+            selecionarSubCategoria(page,  "Impressora de papel");
+            selecionarCentroCusto(page,   "CMHG");
+            selecionarUrgencia(page,      "O meu departamento e não");
+            selecionarSintoma(page,       "Indisponibilidade");
+
+            String resumo   = "Troca de toner, impressora: " + ip + " (BOT)"; 
+            String detalhado = "Sistema automatizado identificou na varredura que a impressora: " + ip +
+                            ", necessita da substituição do toner!";
+
+            page.locator("textarea[name='short_description']").fill(resumo);
+            page.locator("textarea[name='description']").fill(detalhado);
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            botaoEnviar.click();
+
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
+            sucesso = true;
+        } catch (Exception e) {
+            System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
+        }
+
+    }
 
     public void criarChamadoTeste() {
 
@@ -226,27 +274,27 @@ public class ChamadoService {
         }
 
         // Persistir no banco apenas se deu certo
-        if (sucesso) {
-            Chamado c = new Chamado();
-            c.setTelefone("1199999999");
-            c.setHorario("24h");
-            c.setBloco("HOSPITAL");
-            c.setAndar("1º ANDAR");
-            c.setArea("CENTRO CIRUGICO CORREDORES");
-            c.setCategoria("Equipamentos de TI");
-            c.setSubcategoria("Desktop");
-            c.setUrgencia("Poucos equipamentos");
-            c.setSintoma("Falha");
-            c.setResumo("teste 4 08/07/2025");
-            c.setDescricao("teste");
+         if (sucesso) {
+             Chamado c = new Chamado();
+             c.setTelefone("1199999999");
+             c.setHorario("24h");
+             c.setBloco("HOSPITAL");
+             c.setAndar("1º ANDAR");
+             c.setArea("CENTRO CIRUGICO CORREDORES");
+             c.setCategoria("Equipamentos de TI");
+             c.setSubcategoria("Desktop");
+             c.setUrgencia("Poucos equipamentos");
+             c.setSintoma("Falha");
+             c.setResumo("teste 4 08/07/2025");
+             c.setDescricao("teste");
 
-            try {
-                chamadoRepository.save(c);
-                System.out.println("Chamado salvo no banco!");
-            } catch (Exception e) {
-                System.err.println("Falha ao salvar no banco: " + e.getMessage());
-            }
-        }
+             try {
+                 chamadoRepository.save(c);
+                 System.out.println("Chamado salvo no banco!");
+             } catch (Exception e) {
+                 System.err.println("Falha ao salvar no banco: " + e.getMessage());
+             }
+         }
     }
 
     private void selecionarUnidade(Page page, String valorDesejado) {
