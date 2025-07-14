@@ -65,6 +65,7 @@ public class ConversationService {
         this.evolutionApiService = null;
     }
 
+    @SuppressWarnings("UseSpecificCatch")
     public String processUserMessage(String user, String message) {
         // Permitir reset a qualquer momento
         if ("menu".equalsIgnoreCase(message.trim())) {
@@ -125,7 +126,7 @@ public class ConversationService {
                     responses.put("bloco", bloco);
                     userStep.put(user, 3);
                     return buildOptionsMessage("Selecione o andar do bloco " + bloco + ":", BLOCO_ANDARES.get(bloco));
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Bloco inválido. Tente novamente.";
                 }
             }
@@ -140,7 +141,7 @@ public class ConversationService {
                     userStep.put(user, 4);
                     List<String> areas = BLOCO_ANDAR_AREAS.getOrDefault(bloco + "." + andar, List.of("Área não disponível"));
                     return buildOptionsMessage("Selecione a área:", areas);
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Andar inválido. Tente novamente.";
                 }
             }
@@ -155,7 +156,7 @@ public class ConversationService {
                     responses.put("area", area);
                     userStep.put(user, 5);
                     return buildOptionsMessage("Selecione a categoria:", CATEGORIAS);
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Área inválida. Tente novamente.";
                 }
             }
@@ -168,7 +169,7 @@ public class ConversationService {
                     userStep.put(user, 6);
                     List<String> subcats = SUBCATEGORIAS.getOrDefault(categoria, List.of("Nenhuma"));
                     return buildOptionsMessage("Selecione a subcategoria:", subcats);
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Categoria inválida. Tente novamente.";
                 }
             }
@@ -182,7 +183,7 @@ public class ConversationService {
                     responses.put("subcategoria", subcat);
                     userStep.put(user, 7);
                     return buildOptionsMessage("Selecione o nível de urgência:", URGENCIAS);
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Subcategoria inválida. Tente novamente.";
                 }
             }
@@ -194,7 +195,7 @@ public class ConversationService {
                     responses.put("urgencia", urgencia);
                     userStep.put(user, 8);
                     return buildOptionsMessage("Selecione o sintoma:", SINTOMAS);
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Urgência inválida. Tente novamente.";
                 }
             }
@@ -206,7 +207,7 @@ public class ConversationService {
                     responses.put("sintoma", sintoma);
                     userStep.put(user, 9);
                     return "Digite um resumo do problema:";
-                } catch (NumberFormatException e) {
+                } catch (Exception e) {
                     return "❌ Sintoma inválido. Tente novamente.";
                 }
             }
