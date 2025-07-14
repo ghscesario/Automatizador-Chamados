@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.project.Model.WhiteList;
 import com.project.Service.CadastroWhitelistService;
+import com.project.Service.ListasService;
 
 
 @RestController
@@ -19,16 +20,21 @@ public class CadastroWhitelistController {
 
     @Autowired
     private CadastroWhitelistService cadastroWhitelist;
+
+    @Autowired
+    private ListasService listasService;
     
     @PostMapping("/cadastrar")
     public ResponseEntity<String> insert(@RequestBody WhiteList whitelist){
         cadastroWhitelist.insert(whitelist.getNumero(), whitelist.getNome(), whitelist.getCargo());
+        listasService.reload();
         return ResponseEntity.ok("Usuário cadastrado com sucesso na Whitelist!");
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> delete(@PathVariable String numero){
         cadastroWhitelist.delete(numero);
+        listasService.reload();
         return ResponseEntity.ok().body("Usuário deletado!");
     }
 
