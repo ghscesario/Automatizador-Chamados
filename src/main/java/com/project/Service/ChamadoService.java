@@ -72,7 +72,7 @@ public class ChamadoService {
             selecionarArea(page, area);
             selecionarCategoria(page, categoria);
             selecionarSubCategoria(page, subCategoria);
-            selecionarCentroCusto(page, "ORTI");
+            selecionarCentroCusto(page, "CMHG");
             selecionarUrgencia(page, urgencia);
             selecionarSintoma(page, sintoma);
 

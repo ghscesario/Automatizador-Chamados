@@ -31,7 +31,7 @@ public class CadastroWhitelistController {
         return ResponseEntity.ok("Usuário cadastrado com sucesso na Whitelist!");
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/delete/{numero}")
     public ResponseEntity<String> delete(@PathVariable String numero){
         cadastroWhitelist.delete(numero);
         listasService.reload();

@@ -57,7 +57,7 @@ public class ConversationService {
         "Telefonia", List.of("Ramal/Telefone fixo", "Celular corporativo")
     );
     private static final List<String> URGENCIAS = List.of("Poucos equipamentos", "O meu departamento e não afeta diretamente o atendimento ao cliente"
-    ,"Um ou mais computador(es) ligado(s) a equipamento(s) médico(s)", "O meu departamento e diretamente o atendimento ao cliente", "Toda a unidade");
+    ,"Um ou mais computador(es) ligado(s) a equipamento(s) médico(s)", "O meu departamento e diretamente o atendimento ao cliente", "Toda unidade");
     private static final List<String> SINTOMAS = List.of("Indisponibilidade", "Falha/Erro", "Lentidão", "Intermitência");
 
     ConversationService(ChamadoService chamadoService) {
