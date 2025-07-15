@@ -23,6 +23,7 @@ public class EvolutionApiService {
     private String apiKey;
 
     // ✅ Corrigir aqui: método com 3 parâmetros
+    @SuppressWarnings("UseSpecificCatch")
     public void sendTextMessage(String instanceId, String number, String text) {
         if (text == null || text.trim().isEmpty()) {
             System.out.println("Mensagem vazia. Ignorando envio.");

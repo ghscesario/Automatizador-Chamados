@@ -15,10 +15,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.project.Model.PrinterCall;
+import com.project.Repository.PrinterCallRepository;
+
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class PrinterMonitorService {
 
-    @Autowired private ChamadoService chamadoService;
+    @Autowired 
+    private ChamadoService chamadoService;
+
+    @Autowired
+    private PrinterCallRepository printerCallRepository;
 
     /* --------- RICOH SP3710 --------- */
     private final List<String> printerIps = List.of(
@@ -44,7 +53,7 @@ public class PrinterMonitorService {
         ,"10.239.20.208","10.239.20.209"  
     );
 
-    /* --------- LISTA de Ricoh MP C3003/C3004 --------- */
+    /* --------- LISTA de Ricoh MP C300X --------- */
     private final List<String> ricohC3003Ips = List.of(
         "10.239.20.30", // C3003
         "10.239.20.81"  // C3004
@@ -83,33 +92,35 @@ public class PrinterMonitorService {
        ===================================================== */
     private void checkPrinterPreto(String ip) throws Exception {
         int pct = extrairTonerPreto(ip);
-        if (pct == -1) { 
-            System.out.printf("IP %s sem leitura%n", ip); 
-            return; 
+        if (pct == -1) {
+            System.out.printf("IP %s sem leitura%n", ip);
+            return;
         }
 
-        if (pct == 0) { // acessível mas sem barra de toner
+        if (pct == 0) {
             System.out.printf("IP %s sem barra de toner. Abrindo chamado.%n", ip);
             if (!impressorasComChamadoAberto.contains(ip)) {
                 abrirChamado(ip, 0);
-                impressorasComChamadoAberto.add(ip);
+                addCalledPrinter(ip); 
             }
             return;
         }
 
         if (impressorasComChamadoAberto.contains(ip)) {
             if (pct >= LIMITE_CHAMADO) {
-                impressorasComChamadoAberto.remove(ip);
+                removeCalledPrinter(ip);
                 System.out.printf("IP %s Toner recuperado (%d%%).%n", ip, pct);
             }
             return;
         }
+
         System.out.printf("IP %s Toner preto %d%%%n", ip, pct);
         if (pct < LIMITE_CHAMADO) {
             abrirChamado(ip, pct);
-            impressorasComChamadoAberto.add(ip);
+            addCalledPrinter(ip); 
         }
     }
+
     private int extrairTonerPreto(String ip) throws Exception {
         Document doc = fetchFirstAvailable(
             "https://"+ip+"/main.asp?Lang=en-us", "http://"+ip+"/main.asp?Lang=en-us",
@@ -136,23 +147,20 @@ public class PrinterMonitorService {
         boolean aberto = impressorasComChamadoAberto.contains(ip);
         System.out.printf("IP %s %s %s%n", ip, cl, aberto ? "(Chamado aberto)" : "");
 
-        // Monta a string com as cores abaixo do limite
         StringBuilder coresAbaixo = new StringBuilder();
         if (cl.bk >= 0 && cl.bk < LIMITE_CHAMADO) coresAbaixo.append("Preto, ");
-        if (cl.c >= 0 && cl.c < LIMITE_CHAMADO) coresAbaixo.append("Ciano, ");
-        if (cl.m >= 0 && cl.m < LIMITE_CHAMADO) coresAbaixo.append("Magenta, ");
-        if (cl.y >= 0 && cl.y < LIMITE_CHAMADO) coresAbaixo.append("Amarelo, ");
+        if (cl.c  >= 0 && cl.c  < LIMITE_CHAMADO) coresAbaixo.append("Ciano, ");
+        if (cl.m  >= 0 && cl.m  < LIMITE_CHAMADO) coresAbaixo.append("Magenta, ");
+        if (cl.y  >= 0 && cl.y  < LIMITE_CHAMADO) coresAbaixo.append("Amarelo, ");
 
-        // Remove a última vírgula e espaço, se houver
         String coresStr = "";
         if (coresAbaixo.length() > 0) {
             coresStr = coresAbaixo.substring(0, coresAbaixo.length() - 2);
         }
 
         if (aberto) {
-            // Se chamado aberto, só remove se todas as cores estiverem acima do limite
             if (coresStr.isEmpty()) {
-                impressorasComChamadoAberto.remove(ip);
+                removeCalledPrinter(ip); // ✅ remover do banco
                 System.out.printf("IP %s Toners recuperados.%n", ip);
             }
             return;
@@ -160,14 +168,14 @@ public class PrinterMonitorService {
 
         if (!coresStr.isEmpty()) {
             abrirChamadoColorido(ip, coresStr);
-            impressorasComChamadoAberto.add(ip);
+            addCalledPrinter(ip); // ✅ persistência no banco
         }
     }
 
-private void abrirChamadoColorido(String ip, String cores) {
-    System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
-    chamadoService.criarChamadoImpressoraColorida(ip, cores);
-}
+    private void abrirChamadoColorido(String ip, String cores) {
+        System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
+        chamadoService.criarChamadoImpressoraColorida(ip, cores);
+    }
 
 
     private ColorLevels extrairTonerRicohC3003(String ip) throws Exception {
@@ -233,6 +241,25 @@ private void abrirChamadoColorido(String ip, String cores) {
         } catch(Exception e){ 
             return -1; 
         } 
+    }
+
+    @PostConstruct
+    @SuppressWarnings("unused")
+    private void loadCalledPrinters() {
+        printerCallRepository.findAll()
+            .forEach(pc -> impressorasComChamadoAberto.add(pc.getIp()));
+        System.out.printf("IPs com chamado no banco: %s%n", impressorasComChamadoAberto);
+    }
+
+    private void addCalledPrinter(String ip) {
+        if (impressorasComChamadoAberto.add(ip)) {
+            printerCallRepository.save(new PrinterCall(ip));
+        }
+    }
+    private void removeCalledPrinter(String ip) {
+        if (impressorasComChamadoAberto.remove(ip)) {
+            printerCallRepository.deleteById(ip);
+        }
     }
 
     private void abrirChamado(String ip,int nivel){
