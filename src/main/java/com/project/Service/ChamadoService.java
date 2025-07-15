@@ -203,7 +203,7 @@ public class ChamadoService {
     }
 
     // EXECUTAR SEM LOGIN
-    public void criarChamadoImpressora(String ip) {
+    public void criarChamadoImpressora(String ip, String name) {
         @SuppressWarnings("unused")
         boolean sucesso = false;
 
@@ -234,7 +234,7 @@ public class ChamadoService {
             selecionarUrgencia(page,      "O meu departamento e não");
             selecionarSintoma(page,       "Indisponibilidade");
 
-            String resumo   = "Troca de toner, impressora: " + ip + " (BOT)"; 
+            String resumo   = "Troca de toner, impressora: "+ name +" de ip: "+ ip + " (BOT)"; 
             String detalhado = "Sistema automatizado identificou na varredura que a impressora: " + ip +
                             ", necessita da substituição do toner!";
 
