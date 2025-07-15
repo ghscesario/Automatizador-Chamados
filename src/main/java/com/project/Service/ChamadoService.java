@@ -47,6 +47,8 @@ public class ChamadoService {
     public void criarChamado(String telefone, String horario, String bloco, String andar, String area, String categoria, String subCategoria, String urgencia, String sintoma, String descResumo, String descDetalhada) {
         boolean sucesso = false;
 
+        String chamadoGerado = null;
+
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
                 .launch(new BrowserType.LaunchOptions().setHeadless(false));
@@ -84,6 +86,15 @@ public class ChamadoService {
             botaoEnviar.click();
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
+            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+
+            // 3) Lê o texto e grava
+            chamadoGerado = numChamado.innerText().trim();
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+
             sucesso = true;
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado:");
@@ -102,6 +113,7 @@ public class ChamadoService {
             chamado.setSintoma(sintoma);
             chamado.setResumo(descResumo);
             chamado.setDescricao(descDetalhada);
+            chamado.setNumeroChamado(chamadoGerado);
             chamadoRepository.save(chamado);
             System.out.println("Chamado registrado no banco de dados com sucesso.");
         }
@@ -110,6 +122,8 @@ public class ChamadoService {
     // EXECUTAR SEM LOGIN
     public void criarChamadoImpressoraColorida(String ip, String cores) {
         boolean sucesso = false;
+
+        String chamadoGerado = null;
 
         // Playwright: cria o chamado no Service‑Now
         try (Playwright playwright = Playwright.create()) {
@@ -148,6 +162,15 @@ public class ChamadoService {
             botaoEnviar.click();
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+             // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
+            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+
+            // 3) Lê o texto e grava
+            chamadoGerado = numChamado.innerText().trim();
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+
             sucesso = true;
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
@@ -168,6 +191,7 @@ public class ChamadoService {
              c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
              c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
                                      ", necessita da substituição do toner!");
+            c.setNumeroChamado(chamadoGerado);
 
              try {
                  chamadoRepository.save(c);
@@ -182,6 +206,8 @@ public class ChamadoService {
     public void criarChamadoImpressora(String ip) {
         @SuppressWarnings("unused")
         boolean sucesso = false;
+
+        String chamadoGerado = null;
 
         // Playwright: cria o chamado no Service‑Now
         try (Playwright playwright = Playwright.create()) {
@@ -218,12 +244,45 @@ public class ChamadoService {
             Locator botaoEnviar = page.locator("#submit-btn");
             botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
             botaoEnviar.click();
-
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
+            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+
+            // 3) Lê o texto e grava
+            chamadoGerado = numChamado.innerText().trim();
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+
             sucesso = true;
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
         }
+
+        // Persistir no banco só se o passo 1 deu certo
+         if (sucesso) {
+             Chamado c = new Chamado();
+             c.setTelefone("1199999999");
+             c.setHorario("(BOT)");
+             c.setBloco("BLOCO ADMINISTRATIVO");
+             c.setAndar("TÉRREO");
+             c.setArea("T.I");
+             c.setCategoria("Impressoras");
+             c.setSubcategoria("Impressora de papel");
+             c.setUrgencia("O meu departamento e não");
+             c.setSintoma("Indisponibilidade");
+             c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
+             c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
+                                     ", necessita da substituição do toner!");
+            c.setNumeroChamado(chamadoGerado);
+
+             try {
+                 chamadoRepository.save(c);
+                 System.out.println("Chamado salvo no banco!");
+             } catch (Exception e) {
+                 System.err.println("Falha ao salvar no banco: " + e.getMessage());
+             }
+         }
 
     }
 
@@ -231,6 +290,9 @@ public class ChamadoService {
 
         // Executa o Playwright
         boolean sucesso = false;
+
+        String chamadoGerado = null;
+
         try (Playwright playwright = Playwright.create()) {
 
             Browser browser = playwright.chromium()
@@ -260,7 +322,7 @@ public class ChamadoService {
             selecionarUrgencia(page,       "Poucos equipamentos");
             selecionarSintoma(page,        "Falha");
 
-            page.locator("textarea[name='short_description']").fill("teste 4 08/07/2025");
+            page.locator("textarea[name='short_description']").fill("teste 5");
             page.locator("textarea[name='description']").fill("teste");
 
             Locator botaoEnviar = page.locator("#submit-btn");
@@ -268,6 +330,15 @@ public class ChamadoService {
             botaoEnviar.click();
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
+            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+
+            // 3) Lê o texto e grava
+            chamadoGerado = numChamado.innerText().trim();
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+
             sucesso = true;                           // ← chegou até aqui sem exceção
         } catch (Exception e) {
             System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
@@ -287,6 +358,7 @@ public class ChamadoService {
              c.setSintoma("Falha");
              c.setResumo("teste 4 08/07/2025");
              c.setDescricao("teste");
+             c.setNumeroChamado(chamadoGerado);
 
              try {
                  chamadoRepository.save(c);

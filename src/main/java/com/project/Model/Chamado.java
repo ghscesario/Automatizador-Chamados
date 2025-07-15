@@ -29,6 +29,7 @@ public class Chamado {
     private String subcategoria;
     private String urgencia;
     private String sintoma;
+    private String numeroChamado;
     
     @Column(length = 400)
     private String resumo;
