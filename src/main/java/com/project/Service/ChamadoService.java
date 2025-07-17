@@ -68,7 +68,7 @@ public class ChamadoService {
             page.waitForSelector("input[name='horario_escala_trabalho']");
             page.locator("input[name='horario_escala_trabalho']").fill(horario);
 
-            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarUnidade(page, "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
             selecionarBloco(page, bloco);
             selecionarAndar(page, andar);
             selecionarArea(page, area);
@@ -120,7 +120,7 @@ public class ChamadoService {
     }
 
     // EXECUTAR SEM LOGIN
-    public void criarChamadoImpressoraColorida(String ip, String cores) {
+    public void criarChamadoImpressoraColorida(String ip, String cores, String name) {
         boolean sucesso = false;
 
         String chamadoGerado = null;
@@ -140,7 +140,7 @@ public class ChamadoService {
             page.locator("input[name='telefone_celular']").fill("1199999999");
             page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
-            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarUnidade(page,       "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
             selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
             selecionarAndar(page,         "TÉRREO");
             selecionarArea(page,          "T.I");
@@ -188,7 +188,7 @@ public class ChamadoService {
              c.setSubcategoria("Impressora de papel");
              c.setUrgencia("O meu departamento e não");
              c.setSintoma("Indisponibilidade");
-             c.setResumo("Troca de toner, impressora: " + ip + " (BOT)");
+             c.setResumo("Troca de toner, impressora: " + name + " de ip:" + ip + " (BOT)");
              c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
                                      ", necessita da substituição do toner!");
             c.setNumeroChamado(chamadoGerado);
@@ -224,7 +224,7 @@ public class ChamadoService {
             page.locator("input[name='telefone_celular']").fill("1199999999");
             page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
-            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarUnidade(page,       "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
             selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
             selecionarAndar(page,         "TÉRREO");
             selecionarArea(page,          "T.I");
@@ -312,7 +312,7 @@ public class ChamadoService {
             page.waitForSelector("input[name='horario_escala_trabalho']");
             page.locator("input[name='horario_escala_trabalho']").fill("24h");
 
-            selecionarUnidade(page,        "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarUnidade(page,        "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
             selecionarBloco(page,          "HOSPITAL");
             selecionarAndar(page,          "1º ANDAR");
             selecionarArea(page,           "CENTRO CIRUGICO CORREDORES");

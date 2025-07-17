@@ -1,11 +1,13 @@
 package com.project.Service;
 
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,38 +36,12 @@ public class PrinterMonitorService {
     @Autowired
     private PrinterRepository printerRepository;
 
-    /* --------- RICOH SP3710 --------- */
-    // private final List<String> printerIps = List.of(
-    //     "10.239.20.12","10.239.20.15","10.239.20.16"
-    //     ,"10.239.20.17","10.239.20.18","10.239.20.19","10.239.20.20"
-    //     ,"10.239.20.22","10.239.20.23","10.239.20.24","10.239.20.25"
-    //     ,"10.239.20.28","10.239.20.31","10.239.20.32","10.239.20.33"
-    //     ,"10.239.20.34","10.239.20.35","10.239.20.36","10.239.20.37"
-    //     ,"10.239.20.38","10.239.20.39","10.239.20.40","10.239.20.41"
-    //     ,"10.239.20.42","10.239.20.43","10.239.20.44","10.239.20.45"
-    //     ,"10.239.20.46","10.239.20.47","10.239.20.48","10.239.20.49"
-    //     ,"10.239.20.51","10.239.20.52","10.239.20.55","10.239.20.56"
-    //     ,"10.239.20.57","10.239.20.58","10.239.20.59","10.239.20.60"
-    //     ,"10.239.20.61","10.239.20.62","10.239.20.63","10.239.20.64"
-    //     ,"10.239.20.67","10.239.20.68","10.239.20.69","10.239.20.70"
-    //     ,"10.239.20.71","10.239.20.72","10.239.20.73","10.239.20.74"
-    //     ,"10.239.20.75","10.239.20.76","10.239.20.77","10.239.20.78"
-    //     ,"10.239.20.79","10.239.20.80","10.239.20.81","10.239.20.82"
-    //     ,"10.239.20.83","10.239.20.84","10.239.20.85","10.239.20.86"
-    //     ,"10.239.20.87","10.239.20.88","10.239.20.90","10.239.20.92"
-    //     ,"10.239.20.93","10.239.20.94","10.239.20.95","10.239.20.97"
-    //     ,"10.239.20.98","10.239.20.205","10.239.20.206","10.239.20.207"
-    //     ,"10.239.20.208","10.239.20.209"  
-    // );
-
-    // /* --------- LISTA de Ricoh MP C300X --------- */
-    // private final List<String> ricohC3003Ips = List.of(
-    //     "10.239.20.30", // C3003
-    //     "10.239.20.81"  // C3004
-    // );
+    @Autowired
+    private FrameScraperService frameScraperService;
 
     private List<String> printerIps;      // SP3710
     private List<String> ricohC3003Ips;   // C3003/C3004
+    private List<String> kyoceraIps;    //Kyocera
 
     @PostConstruct
     @SuppressWarnings("unused")
@@ -73,6 +49,8 @@ public class PrinterMonitorService {
         printerIps     = printerRepository.findByTipo("SP3710")
                                         .stream().map(Printer::getIp).toList();
         ricohC3003Ips  = printerRepository.findByTipo("C300X")
+                                        .stream().map(Printer::getIp).toList();
+        kyoceraIps  = printerRepository.findByTipo("Kyocera")
                                         .stream().map(Printer::getIp).toList();
 
         System.out.printf("IPs SP3710  : %s%n", printerIps);
@@ -92,6 +70,9 @@ public class PrinterMonitorService {
         this.ricohC3003Ips = printerRepository.findAllByTipo("C300X")
             .stream().map(Printer::getIp).toList();
 
+        this.kyoceraIps = printerRepository.findAllByTipo("Kyocera")
+            .stream().map(Printer::getIp).toList();
+
         this.printerIps.forEach(ip -> tryRun(() -> {
             try {
                 checkPrinterPreto(ip);
@@ -107,17 +88,18 @@ public class PrinterMonitorService {
                 e.printStackTrace();
             }
         }, ip));
-    }
+        this.kyoceraIps.forEach(ip -> tryRun(() -> {
+            try {
+                checkKyocera(ip);
+            } catch (Exception e) {
+                System.out.println("Impressora de IP: " + ip + " se encontra indisponível ou offline!");
+            }
+        }, ip));
 
-
-    private void tryRun(Runnable r, String ip){
-        try { r.run(); } catch(Exception e){
-            System.err.printf("Erro IP %s → %s%n", ip, e.getMessage());
-        }
     }
 
     /* =====================================================
-       IMPRESSORAS PRETO / KYOCERA / EPSON
+       IMPRESSORAS SP3710
        ===================================================== */
     private void checkPrinterPreto(String ip) throws Exception {
         int pct = extrairTonerPreto(ip);
@@ -201,11 +183,6 @@ public class PrinterMonitorService {
         }
     }
 
-    private void abrirChamadoColorido(String ip, String cores) {
-        System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
-        chamadoService.criarChamadoImpressoraColorida(ip, cores);
-    }
-
 
     private ColorLevels extrairTonerRicohC3003(String ip) throws Exception {
         Document doc = fetchFirstAvailable(
@@ -228,6 +205,7 @@ public class PrinterMonitorService {
         }
         return lv;
     }
+
     private static class ColorLevels{
         int bk = -1, c = -1, m = -1, y = -1;
         int menor(){ 
@@ -241,6 +219,43 @@ public class PrinterMonitorService {
         @SuppressWarnings("override")
         public String toString(){ 
             return String.format("Preto %d%%, Ciano %d%%, Magenta %d%%, Amarelo %d%%", bk, c, m, y);
+        }
+    }
+
+        /* =====================================================
+                        Kyocera
+       ===================================================== */
+    public void checkKyocera(String ip) throws Exception {
+        String valor = frameScraperService.capturarValorDoFrame(ip);
+
+        if (valor == null) {
+            System.out.printf("Kyocera %s → sem leitura ou erro%n", ip);
+            return;
+        }
+
+        int pct = parsePercent(valor);
+        if (pct == -1) {
+            System.out.printf("Kyocera %s → valor inválido '%s'%n", ip, valor);
+            return;
+        }
+
+        boolean aberto = impressorasComChamadoAberto.contains(ip);
+
+        if (aberto) {
+            if (pct >= LIMITE_CHAMADO) {
+                removeCalledPrinter(ip);
+                System.out.printf("Kyocera %s Toner recuperado (%d%%)%n", ip, pct);
+            } else {
+                System.out.printf("Kyocera %s Chamado aberto — toner ainda baixo (%d%%)%n", ip, pct);
+            }
+            return;
+        }
+
+        System.out.printf("Kyocera %s Toner %d%%%n", ip, pct);
+
+        if (pct < LIMITE_CHAMADO) {
+            abrirChamado(ip, pct);
+            addCalledPrinter(ip);
         }
     }
 
@@ -291,6 +306,12 @@ public class PrinterMonitorService {
         }
     }
 
+        private void tryRun(Runnable r, String ip){
+        try { r.run(); } catch(Exception e){
+            System.err.printf("Erro IP %s → %s%n", ip, e.getMessage());
+        }
+    }
+
     private void abrirChamado(String ip, int nivel) {
         // 1) Descobre o nome da impressora no banco
         String nome = printerRepository.findById(ip)
@@ -301,6 +322,14 @@ public class PrinterMonitorService {
 
         // 2) Passa IP + nome ao ChamadoService
         chamadoService.criarChamadoImpressora(ip, nome);
+    }
+
+    private void abrirChamadoColorido(String ip, String cores) {
+        String nome = printerRepository.findById(ip)
+                        .map(Printer::getName)        
+                        .orElse("(sem nome)");
+        System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
+        chamadoService.criarChamadoImpressoraColorida(ip, cores, nome);
     }
 
 }

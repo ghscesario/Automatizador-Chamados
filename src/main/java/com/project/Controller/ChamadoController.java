@@ -27,5 +27,10 @@ public class ChamadoController {
     public void verificarToner(){
         printerMonitorService.checkAllPrinters();
     }
+
+    // @GetMapping("/checarKyocera")
+    // public void verificarKyocera() throws Exception{
+    //     printerMonitorService.checkKyocera("10.239.20.21");
+    // }
     
 }
