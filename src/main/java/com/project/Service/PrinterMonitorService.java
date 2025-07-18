@@ -4,7 +4,9 @@ package com.project.Service;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,12 +38,18 @@ public class PrinterMonitorService {
     @Autowired
     private PrinterRepository printerRepository;
 
+    //Kyocera Scraper
     @Autowired
     private FrameScraperService frameScraperService;
 
+    @Autowired
+    private EpsonScraper epsonScraper;
+
     private List<String> printerIps;      // SP3710
-    private List<String> ricohC3003Ips;   // C3003/C3004
-    private List<String> kyoceraIps;    //Kyocera
+    private List<String> ricohC3003Ips;  // C3003/C3004
+    private List<String> kyoceraIps;    // Kyocera
+    private List<String> epsonIps;     // Epson L5290
+    private List<String> im430Ips;    // Ricoh IM430
 
     @PostConstruct
     @SuppressWarnings("unused")
@@ -51,6 +59,10 @@ public class PrinterMonitorService {
         ricohC3003Ips  = printerRepository.findByTipo("C300X")
                                         .stream().map(Printer::getIp).toList();
         kyoceraIps  = printerRepository.findByTipo("Kyocera")
+                                        .stream().map(Printer::getIp).toList();
+        epsonIps = printerRepository.findByTipo("Epson")
+                                        .stream().map(Printer::getIp).toList();
+        im430Ips = printerRepository.findByTipo("im430")
                                         .stream().map(Printer::getIp).toList();
 
         System.out.printf("IPs SP3710  : %s%n", printerIps);
@@ -72,7 +84,20 @@ public class PrinterMonitorService {
 
         this.kyoceraIps = printerRepository.findAllByTipo("Kyocera")
             .stream().map(Printer::getIp).toList();
+        
+        this.epsonIps = printerRepository.findAllByTipo("Epson")
+            .stream().map(Printer::getIp).toList();
 
+        this.im430Ips = printerRepository.findAllByTipo("im430")
+            .stream().map(Printer::getIp).toList();
+
+        im430Ips.forEach(ip -> tryRun(() -> {
+            try {
+                checkRicoh(ip);
+            } catch (Exception e) {
+                System.out.println("IM430 " + ip + " indisponível ou erro.");
+            }
+        }, ip));
         this.printerIps.forEach(ip -> tryRun(() -> {
             try {
                 checkPrinterPreto(ip);
@@ -80,7 +105,6 @@ public class PrinterMonitorService {
                 System.out.println("Impressora de IP: " + ip + " se encontra indisponível ou offline!");
             }
         }, ip));
-
         this.ricohC3003Ips.forEach(ip -> tryRun(() -> {
             try {
                 checkPrinterC3003(ip);
@@ -95,6 +119,15 @@ public class PrinterMonitorService {
                 System.out.println("Impressora de IP: " + ip + " se encontra indisponível ou offline!");
             }
         }, ip));
+        epsonIps.forEach(ip -> tryRun(() -> {
+            try {
+                checkEpson(ip);
+            } catch (Exception e) {
+                System.out.println("Epson " + ip + " indisponível ou erro.");
+            }
+        }, ip));
+        
+        
 
     }
 
@@ -260,6 +293,91 @@ public class PrinterMonitorService {
     }
 
     /* =====================================================
+                        Epson
+       ===================================================== */
+        private void checkEpson(String ip) {
+        final int ALTURA_MAXIMA = 50; // 50 = 100%
+        var alturas = epsonScraper.obterNiveisDeTinta(ip);
+
+        if (alturas.isEmpty()) {
+            System.out.printf("Epson %s sem leitura%n", ip);
+            return;
+        }
+
+        System.out.printf("Epson %s Níveis de tinta: %n", ip);
+        Map<String, Integer> niveisConvertidos = new HashMap<>();
+
+        alturas.forEach((cor, altura) -> {
+            int percentual = (int) Math.round((altura / (double) ALTURA_MAXIMA) * 100);
+            niveisConvertidos.put(cor, percentual);
+            System.out.printf("   - %s: %d%%%n", cor, percentual);
+        });
+
+        StringBuilder coresBaixas = new StringBuilder();
+
+        niveisConvertidos.forEach((cor, nivel) -> {
+            if (nivel < LIMITE_CHAMADO) {
+                coresBaixas.append(cor).append(", ");
+            }
+        });
+
+        boolean aberto = impressorasComChamadoAberto.contains(ip);
+
+        if (coresBaixas.length() > 0) {
+            String coresStr = coresBaixas.substring(0, coresBaixas.length() - 2);
+
+            if (!aberto) {
+                abrirChamadoColorido(ip, coresStr);
+                addCalledPrinter(ip);
+            } else {
+                System.out.printf("Epson %s Chamado já aberto. Tinta(s) baixa(s): %s%n", ip, coresStr);
+            }
+        } else if (aberto) {
+            System.out.printf("Epson %s Todas tintas recuperadas%n", ip);
+            removeCalledPrinter(ip);
+        } else {
+            System.out.printf("");
+        }
+    }
+
+     /* =====================================================
+                        Ricoh IM430
+       ===================================================== */
+    private void checkRicoh(String ip) {
+        var niveis = RicohIMScraper.obterNiveisDeToner(ip);
+
+        if (niveis.isEmpty()) {
+            System.out.printf("Ricoh %s sem leitura%n", ip);
+            return;
+        }
+
+        try {
+            niveis.forEach((cor, nivel) -> {
+                System.out.printf("%s Toner %s: %d%%%n", ip, cor, nivel);
+
+                boolean aberto = impressorasComChamadoAberto.contains(ip);
+
+                if (nivel < LIMITE_CHAMADO) {
+                    if (!aberto) {
+                        abrirChamado(ip, nivel);
+                        addCalledPrinter(ip);
+                    } else {
+                        System.out.printf("Ricoh %s Chamado já aberto. Toner baixo%n", ip);
+                    }
+                } else if (aberto) {
+                    System.out.printf("Ricoh %s Toner recuperado%n", ip);
+                    removeCalledPrinter(ip);
+                } else {
+                    System.out.printf("");
+                }
+            });
+        } catch (Exception e) {
+            System.out.printf("Erro ao processar toner da impressora %s: %s%n", ip, e.getMessage());
+        }
+    }
+
+
+    /* =====================================================
        FERRAMENTAS GERAIS
        ===================================================== */
     @SuppressWarnings("UseSpecificCatch")
@@ -315,7 +433,7 @@ public class PrinterMonitorService {
     private void abrirChamado(String ip, int nivel) {
         // 1) Descobre o nome da impressora no banco
         String nome = printerRepository.findById(ip)
-                        .map(Printer::getName)        // <-- getter do novo campo
+                        .map(Printer::getName)
                         .orElse("(sem nome)");
 
         System.out.printf("Chamado IP %s (%s) toner %d%%%n", ip, nome, nivel);
