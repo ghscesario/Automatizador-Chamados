@@ -298,7 +298,7 @@ public class ChamadoService {
             page.locator("input[name='telefone_celular']").fill("1199999999");
             page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
-            selecionarUnidade(page,       "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
+            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
             selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
             selecionarAndar(page,         "TÉRREO");
             selecionarArea(page,          "T.I");
@@ -382,7 +382,7 @@ public class ChamadoService {
             page.locator("input[name='telefone_celular']").fill("1199999999");
             page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
-            selecionarUnidade(page,       "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
+            selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
             selecionarBloco(page,         "BLOCO ADMINISTRATIVO");
             selecionarAndar(page,         "TÉRREO");
             selecionarArea(page,          "T.I");
@@ -470,7 +470,7 @@ public class ChamadoService {
             page.waitForSelector("input[name='horario_escala_trabalho']");
             page.locator("input[name='horario_escala_trabalho']").fill("24h");
 
-            selecionarUnidade(page,        "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
+            selecionarUnidade(page,        "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
             selecionarBloco(page,          "HOSPITAL");
             selecionarAndar(page,          "1º ANDAR");
             selecionarArea(page,           "CENTRO CIRUGICO CORREDORES");

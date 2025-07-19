@@ -16,6 +16,8 @@ public class ConversationService {
 
     private final ChamadoService chamadoService;
 
+    private String retornoChamado="";
+
     private final Map<String, Integer> userStep = new HashMap<>();
     private final Map<String, Map<String, String>> userResponses = new HashMap<>();
     private final Map<String, String> userModes = new HashMap<>();
@@ -255,7 +257,7 @@ public class ConversationService {
                         String resumo = responses.get("resumo");
                         String descricao = responses.get("descricao");
 
-                        chamadoService.criarChamadoInterno(telefoneLimpo, horario, bloco, andar, area, categoria, subcategoria, sistema, urgencia, sintoma, resumo, descricao);
+                        retornoChamado = chamadoService.criarChamadoInterno(telefoneLimpo, horario, bloco, andar, area, categoria, subcategoria, sistema, urgencia, sintoma, resumo, descricao);
                     } catch (Exception e) {
                         System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
                     }
@@ -266,7 +268,7 @@ public class ConversationService {
 
                     // Envia a mensagem final para o usuário
                     String numero = responses.get("telefone");
-                    String mensagemFinal = "✅ Chamado aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
+                    String mensagemFinal = "✅ Chamado de número: "+retornoChamado+", aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
 
                     // Aqui é necessário um meio de envio manual — você pode injetar o `EvolutionApiService` para isso:
                     try {
