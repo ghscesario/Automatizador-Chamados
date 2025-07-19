@@ -44,6 +44,7 @@ public class ChamadoService {
     }
 
     // EXECUTAR SEM LOGIN
+    // CHAMADO SUPORTE
     public void criarChamado(String telefone, String horario, String bloco, String andar, String area, String categoria, String subCategoria, String urgencia, String sintoma, String descResumo, String descDetalhada) {
         boolean sucesso = false;
 
@@ -68,7 +69,7 @@ public class ChamadoService {
             page.waitForSelector("input[name='horario_escala_trabalho']");
             page.locator("input[name='horario_escala_trabalho']").fill(horario);
 
-            selecionarUnidade(page, "HOSPITAL ESTADUAL DE URGÊNCIAS DE GOIÁS");
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
             selecionarBloco(page, bloco);
             selecionarAndar(page, andar);
             selecionarArea(page, area);
@@ -118,6 +119,160 @@ public class ChamadoService {
             System.out.println("Chamado registrado no banco de dados com sucesso.");
         }
     }
+    
+        //CHAMADO SISTEMAS
+        public void criarChamadoSistemas(String telefone, String horario, String bloco, String andar, String area, String sistema, String urgencia, String sintoma, String descResumo, String descDetalhada) {
+        boolean sucesso = false;
+
+        String chamadoGerado = null;
+
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
+
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+            // TELEFONE
+            page.waitForSelector("input[name='telefone_celular']");
+            page.locator("input[name='telefone_celular']").fill(telefone);
+
+            // HORÁRIO TRABALHO
+            page.waitForSelector("input[name='horario_escala_trabalho']");
+            page.locator("input[name='horario_escala_trabalho']").fill(horario);
+
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page, bloco);
+            selecionarAndar(page, andar);
+            selecionarArea(page, area);
+            selecionarCategoria(page, "Sistemas, Softwares e Apps");
+            selecionarSubCategoria(page, "Sistemas Corporativos e Assistenciais");
+            selecionarSistema(page, sistema);
+            selecionarCentroCusto(page, "CMHG");
+            selecionarUrgencia(page, urgencia);
+            selecionarSintoma(page, sintoma);
+
+            page.locator("textarea[name='short_description']").fill(descResumo);
+            page.locator("textarea[name='description']").fill(descDetalhada);
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            botaoEnviar.click();
+
+            System.out.println("Clique em 'Enviar Solicitação' realizado.");
+
+            // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
+            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+
+            // 3) Lê o texto e grava
+            chamadoGerado = numChamado.innerText().trim();
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+
+            sucesso = true;
+        } catch (Exception e) {
+            System.err.println("Erro ao criar o chamado:");
+        }
+
+        if (sucesso) {
+            Chamado chamado = new Chamado();
+            chamado.setTelefone(telefone);
+            chamado.setHorario(horario);
+            chamado.setBloco(bloco);
+            chamado.setAndar(andar);
+            chamado.setArea(area);
+            chamado.setCategoria("Sistemas, Softwares e Apps");
+            chamado.setSubcategoria("Sistemas Corporativos e Assistenciais");
+            chamado.setUrgencia(urgencia);
+            chamado.setSintoma(sintoma);
+            chamado.setResumo(descResumo);
+            chamado.setDescricao(descDetalhada);
+            chamado.setNumeroChamado(chamadoGerado);
+            chamadoRepository.save(chamado);
+            System.out.println("Chamado registrado no banco de dados com sucesso.");
+        }
+    }
+
+    //CHAMADOS GERAL
+    public void criarChamadoInterno(String telefone, String horario, String bloco, String andar, String area,
+                                String categoria, String subCategoria, String sistema,
+                                String urgencia, String sintoma,
+                                String descResumo, String descDetalhada) {
+        boolean sucesso = false;
+        String chamadoGerado = null;
+
+        try (Playwright playwright = Playwright.create()) { 
+            Browser browser = playwright.chromium()
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+
+            BrowserContext context = browser.newContext(
+                new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
+            );
+
+            Page page = context.newPage();
+            page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
+
+            page.waitForSelector("input[name='telefone_celular']");
+            page.locator("input[name='telefone_celular']").fill(telefone);
+
+            page.waitForSelector("input[name='horario_escala_trabalho']");
+            page.locator("input[name='horario_escala_trabalho']").fill(horario);
+
+            selecionarUnidade(page, "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
+            selecionarBloco(page, bloco);
+            selecionarAndar(page, andar);
+            selecionarArea(page, area);
+            selecionarCategoria(page, categoria);
+            selecionarSubCategoria(page, subCategoria);
+
+            if (sistema != null && !sistema.isBlank()) {
+                selecionarSistema(page, sistema);
+            }
+
+            selecionarCentroCusto(page, "CMHG");
+            selecionarUrgencia(page, urgencia);
+            selecionarSintoma(page, sintoma);
+
+            page.locator("textarea[name='short_description']").fill(descResumo);
+            page.locator("textarea[name='description']").fill(descDetalhada);
+
+            Locator botaoEnviar = page.locator("#submit-btn");
+            botaoEnviar.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            botaoEnviar.click();
+
+            Locator numChamado = page.locator("div#data\\.number\\.name");
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000));
+            chamadoGerado = numChamado.innerText().trim();
+
+            System.out.println("Número do chamado gerado: " + chamadoGerado);
+            sucesso = true;
+        } catch (Exception e) {
+            System.err.println("Erro ao criar o chamado: " + e.getMessage());
+        }
+
+        if (sucesso) {
+            Chamado chamado = new Chamado();
+            chamado.setTelefone(telefone);
+            chamado.setHorario(horario);
+            chamado.setBloco(bloco);
+            chamado.setAndar(andar);
+            chamado.setArea(area);
+            chamado.setCategoria(categoria);
+            chamado.setSubcategoria(subCategoria);
+            chamado.setUrgencia(urgencia);
+            chamado.setSintoma(sintoma);
+            chamado.setResumo(descResumo);
+            chamado.setDescricao(descDetalhada);
+            chamado.setNumeroChamado(chamadoGerado);
+            chamadoRepository.save(chamado);
+            System.out.println("Chamado registrado no banco de dados com sucesso.");
+        }
+    }
+
 
     // EXECUTAR SEM LOGIN
     public void criarChamadoImpressoraColorida(String ip, String cores, String name) {
@@ -570,6 +725,36 @@ public class ChamadoService {
             System.err.println("Erro ao selecionar subcategoria: " + valorDesejado);
         }
     }
+
+    private void selecionarSistema(Page page, String valorDesejado) {
+        try {
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
+
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_u_system");
+            dropdown.click();
+
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen15_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
+
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
+
+            System.out.println("Sistema selecionado: " + valorDesejado);
+        } catch (Exception e) {
+            System.err.println("Erro ao selecionar sistema: " + valorDesejado);
+        }
+    }
+
 
     // Reutilizável para campos Select2 com digitação
     private void selecionarOpcaoSelect2(Page page, String select2Id, String valorDesejado) {

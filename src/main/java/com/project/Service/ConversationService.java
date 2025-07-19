@@ -56,6 +56,10 @@ public class ConversationService {
         "Sistemas", List.of("Sistemas Corporativos", "Sistemas de Imagem"),
         "Telefonia", List.of("Ramal/Telefone fixo", "Celular corporativo")
     );
+    private static final Map<String, List<String>> SISTEMAS_POR_SUBCATEGORIA = Map.of(
+    "Sistemas Corporativos", List.of("MV SOUL - HIS Gestão Hospitalar", "Rison Web / Deep Unity", "MATRIX"),
+    "Sistemas de Imagem", List.of("PACS")
+    );
     private static final List<String> URGENCIAS = List.of("Poucos equipamentos", "O meu departamento e não afeta diretamente o atendimento ao cliente"
     ,"Um ou mais computador(es) ligado(s) a equipamento(s) médico(s)", "O meu departamento e diretamente o atendimento ao cliente", "Toda unidade");
     private static final List<String> SINTOMAS = List.of("Indisponibilidade", "Falha/Erro", "Lentidão", "Intermitência");
@@ -181,8 +185,17 @@ public class ConversationService {
                     int idx = Integer.parseInt(message.trim()) - 1;
                     String subcat = subcats.get(idx);
                     responses.put("subcategoria", subcat);
+
+                    // Se categoria for "Sistemas" e subcat tiver sistemas, pede seleção do sistema
+                    if ("Sistemas".equals(categoria) && SISTEMAS_POR_SUBCATEGORIA.containsKey(subcat)) {
+                        userStep.put(user, 61); // próximo passo: escolher sistema
+                        return buildOptionsMessage("Selecione o sistema:", SISTEMAS_POR_SUBCATEGORIA.get(subcat));
+                    }
+
+                    // Caso contrário, segue para urgência normalmente
                     userStep.put(user, 7);
                     return buildOptionsMessage("Selecione o nível de urgência:", URGENCIAS);
+
                 } catch (Exception e) {
                     return "❌ Subcategoria inválida. Tente novamente.";
                 }
@@ -236,15 +249,13 @@ public class ConversationService {
                         String area = responses.get("area");
                         String categoria = responses.get("categoria");
                         String subcategoria = responses.get("subcategoria");
+                        String sistema = responses.get("sistema");
                         String urgencia = responses.get("urgencia");
                         String sintoma = responses.get("sintoma");
                         String resumo = responses.get("resumo");
                         String descricao = responses.get("descricao");
 
-                        chamadoService.criarChamado(
-                            telefoneLimpo, horario, bloco, andar, area, categoria,
-                            subcategoria, urgencia, sintoma, resumo, descricao
-                        );
+                        chamadoService.criarChamadoInterno(telefoneLimpo, horario, bloco, andar, area, categoria, subcategoria, sistema, urgencia, sintoma, resumo, descricao);
                     } catch (Exception e) {
                         System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
                     }
@@ -267,6 +278,21 @@ public class ConversationService {
                 }).start();
 
                 return "🛠️ Abrindo chamado, aguarde...";
+            }
+
+            case 61 -> {
+                try {
+                    String subcat = responses.get("subcategoria");
+                    List<String> sistemas = SISTEMAS_POR_SUBCATEGORIA.getOrDefault(subcat, List.of());
+                    int idx = Integer.parseInt(message.trim()) - 1;
+                    if (idx < 0 || idx >= sistemas.size()) throw new NumberFormatException();
+                    String sistema = sistemas.get(idx);
+                    responses.put("sistema", sistema);
+                    userStep.put(user, 7);  // Após sistema, continua para urgência
+                    return buildOptionsMessage("Selecione o nível de urgência:", URGENCIAS);
+                } catch (Exception e) {
+                    return "❌ Sistema inválido. Tente novamente.";
+                }
             }
             
             case 999 -> {
