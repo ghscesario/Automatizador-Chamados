@@ -72,7 +72,6 @@ public class PrinterMonitorService {
     private final Set<String> impressorasComChamadoAberto = ConcurrentHashMap.newKeySet();
     private static final int LIMITE_CHAMADO = 25;
 
-    /* ----------RICOH SP3710---------- */
     @Scheduled(fixedRate = 1800000)
     @SuppressWarnings("CallToPrintStackTrace")
     public void checkAllPrinters() {
