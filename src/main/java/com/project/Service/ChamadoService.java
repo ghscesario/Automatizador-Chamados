@@ -572,25 +572,58 @@ public class ChamadoService {
         }
     }
 
+    /////////////////////////////////////////////////////////////////
+    ////////////////////// MÉTODO ANTIGO ///////////////////////////
+    ///////////////////////////////////////////////////////////////
+    // private void selecionarArea(Page page, String valorDesejado) {
+    //     try {
+    //         // Clica na seta para abrir o dropdown do Bloco
+    //         Locator setaDropdown = page.locator("#s2id_sp_formfield_unidade_departamento .select2-arrow");
+    //         setaDropdown.click();
+
+    //         // Espera o container da lista aparecer
+    //         page.waitForSelector("ul#select2-results-12", new Page.WaitForSelectorOptions().setTimeout(5000));
+
+    //         // Localiza o item <li> da lista que contém o texto da opção desejada e clica
+    //         Locator opcao = page.locator("ul#select2-results-12 > li", new Page.LocatorOptions().setHasText(valorDesejado));
+    //         opcao.waitFor(new Locator.WaitForOptions().setTimeout(5000));
+    //         opcao.click();
+
+    //         System.out.println("Bloco selecionado: " + valorDesejado);
+    //     } catch (Exception e) {
+    //         System.err.println("Erro ao selecionar bloco: " + valorDesejado);
+    //     }
+    // }
+
     private void selecionarArea(Page page, String valorDesejado) {
         try {
-            // Clica na seta para abrir o dropdown do Bloco
-            Locator setaDropdown = page.locator("#s2id_sp_formfield_unidade_departamento .select2-arrow");
-            setaDropdown.click();
+            // Aguarda brevemente antes de iniciar
+            page.waitForTimeout(1000);
 
-            // Espera o container da lista aparecer
-            page.waitForSelector("ul#select2-results-12", new Page.WaitForSelectorOptions().setTimeout(5000));
+            // Clica no campo select2 para abrir o dropdown
+            Locator dropdown = page.locator("#s2id_sp_formfield_unidade_departamento");
+            dropdown.click();
 
-            // Localiza o item <li> da lista que contém o texto da opção desejada e clica
-            Locator opcao = page.locator("ul#select2-results-12 > li", new Page.LocatorOptions().setHasText(valorDesejado));
-            opcao.waitFor(new Locator.WaitForOptions().setTimeout(5000));
-            opcao.click();
+            // Aguarda o campo de input aparecer
+            Locator campoBusca = page.locator("#s2id_autogen12_search");
+            campoBusca.waitFor(new Locator.WaitForOptions().setTimeout(5000));
 
-            System.out.println("Bloco selecionado: " + valorDesejado);
+            // Digita o valor desejado com um pequeno delay entre teclas
+            campoBusca.fill(""); // limpa o campo
+            campoBusca.type(valorDesejado, new Locator.TypeOptions().setDelay(100));
+
+            // Aguarda a lista atualizar
+            page.waitForTimeout(1000); // pode ajustar esse valor caso a lista demore mais
+
+            // Pressiona Enter para selecionar a primeira opção correspondente
+            page.keyboard().press("Enter");
+
+            System.out.println("Area selecionada: " + valorDesejado);
         } catch (Exception e) {
-            System.err.println("Erro ao selecionar bloco: " + valorDesejado);
+            System.err.println("Erro ao selecionar Area: " + valorDesejado);
         }
     }
+
 
     private void selecionarCategoria(Page page, String valorDesejado) {
         try {
