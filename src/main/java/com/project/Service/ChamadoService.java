@@ -198,12 +198,13 @@ public class ChamadoService {
     }
 
     //CHAMADOS GERAL
-    public void criarChamadoInterno(String telefone, String horario, String bloco, String andar, String area,
+    public String criarChamadoInterno(String telefone, String horario, String bloco, String andar, String area,
                                 String categoria, String subCategoria, String sistema,
                                 String urgencia, String sintoma,
                                 String descResumo, String descDetalhada) {
         boolean sucesso = false;
         String chamadoGerado = null;
+        String numChamadoFinal = "";
 
         try (Playwright playwright = Playwright.create()) { 
             Browser browser = playwright.chromium()
@@ -269,8 +270,10 @@ public class ChamadoService {
             chamado.setDescricao(descDetalhada);
             chamado.setNumeroChamado(chamadoGerado);
             chamadoRepository.save(chamado);
+            numChamadoFinal = chamadoGerado;
             System.out.println("Chamado registrado no banco de dados com sucesso.");
         }
+        return numChamadoFinal;
     }
 
 

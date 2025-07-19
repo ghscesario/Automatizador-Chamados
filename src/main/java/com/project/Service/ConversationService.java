@@ -91,7 +91,7 @@ public class ConversationService {
         }
 
         if (MODO_ATENDENTE.equals(modo)) {
-            return null; // modo silencioso
+            return " ";
         }
 
         // Se chegou aqui, está no modo chamado
@@ -318,7 +318,7 @@ public class ConversationService {
             }
             case "2" -> {
                 userModes.put(user, MODO_ATENDENTE);
-                return "📞 Um atendente será acionado. Aguarde o contato.";
+                return "📞 INCLUIR LINK PARA WHATSAPP DO PLANTÃO AQUI PARA ABRIR CONVERSA NO WHATSAPP DIRETAMENTE! ";
             }
             case "3" -> {
                 userModes.put(user, MODO_INFO);
@@ -331,7 +331,7 @@ public class ConversationService {
     }
 
     private String getMenuInicial() {
-        return "👋 Bem vindo(a) ao Suporte HUGO! Como podemos te ajudar?\n\n1 - Abrir chamado\n2 - Falar com atendente\n3 - Informações sobre a T.I\n Em caso de algum erro no preenchimento digitar 'menu' para voltar ao menu inicial";
+        return "👋 Bem vindo(a) ao Suporte HUGO! Como podemos te ajudar?\n\n1 - Abrir chamado\n2 - Falar com analista de suporte\n3 - Informações sobre a T.I\n \n *Em caso de algum erro no preenchimento digitar 'menu' para voltar ao menu inicial*";
     }
 
     private String buildOptionsMessage(String prompt, List<String> options) {
