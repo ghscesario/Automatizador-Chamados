@@ -278,12 +278,10 @@ public class ChamadoService {
 
 
     // EXECUTAR SEM LOGIN
-    public void criarChamadoImpressoraColorida(String ip, String cores, String name) {
+    public String criarChamadoImpressoraColorida(String ip, String cores, String name) {
         boolean sucesso = false;
-
         String chamadoGerado = null;
 
-        // Playwright: cria o chamado no Service‑Now
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
                 .launch(new BrowserType.LaunchOptions().setHeadless(false));
@@ -321,11 +319,9 @@ public class ChamadoService {
 
             System.out.println("Clique em 'Enviar Solicitação' realizado.");
 
-             // 2) Aguarda o ServiceNow gerar e exibir o número do chamado
-            Locator numChamado = page.locator("div#data\\.number\\.name");   // CSS: o ponto precisa ser escapado
-            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000)); // ajuste se precisar
+            Locator numChamado = page.locator("div#data\\.number\\.name");
+            numChamado.waitFor(new Locator.WaitForOptions().setTimeout(10_000));
 
-            // 3) Lê o texto e grava
             chamadoGerado = numChamado.innerText().trim();
             System.out.println("Número do chamado gerado: " + chamadoGerado);
 
@@ -334,38 +330,43 @@ public class ChamadoService {
             System.err.println("Erro ao criar o chamado (Playwright): " + e.getMessage());
         }
 
-        // Persistir no banco só se o passo 1 deu certo
-         if (sucesso) {
-             Chamado c = new Chamado();
-             c.setTelefone("1199999999");
-             c.setHorario("(BOT)");
-             c.setBloco("BLOCO ADMINISTRATIVO");
-             c.setAndar("TÉRREO");
-             c.setArea("T.I");
-             c.setCategoria("Impressoras");
-             c.setSubcategoria("Impressora de papel");
-             c.setUrgencia("O meu departamento e não");
-             c.setSintoma("Indisponibilidade");
-             c.setResumo("Troca de toner, impressora: " + name + " de ip:" + ip + " (BOT)");
-             c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
-                                     ", necessita da substituição do toner!");
+        if (sucesso) {
+            Chamado c = new Chamado();
+            c.setTelefone("1199999999");
+            c.setHorario("(BOT)");
+            c.setBloco("BLOCO ADMINISTRATIVO");
+            c.setAndar("TÉRREO");
+            c.setArea("T.I");
+            c.setCategoria("Impressoras");
+            c.setSubcategoria("Impressora de papel");
+            c.setUrgencia("O meu departamento e não");
+            c.setSintoma("Indisponibilidade");
+            c.setResumo("Troca de toner, impressora: " + name + " de ip:" + ip + " (BOT)");
+            c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
+                                ", necessita da substituição do toner!");
             c.setNumeroChamado(chamadoGerado);
 
-             try {
-                 chamadoRepository.save(c);
-                 System.out.println("Chamado salvo no banco!");
-             } catch (Exception e) {
-                 System.err.println("Falha ao salvar no banco: " + e.getMessage());
-             }
-         }
+            try {
+                chamadoRepository.save(c);
+                System.out.println("Chamado salvo no banco!");
+            } catch (Exception e) {
+                System.err.println("Falha ao salvar no banco: " + e.getMessage());
+            }
+        }
+
+        // retorna o número do chamado gerado
+        return chamadoGerado;
     }
 
+
     // EXECUTAR SEM LOGIN
-    public void criarChamadoImpressora(String ip, String name) {
+    public String criarChamadoImpressora(String ip, String name) {
         @SuppressWarnings("unused")
         boolean sucesso = false;
 
         String chamadoGerado = null;
+
+        String chamadoFinal="";
 
         // Playwright: cria o chamado no Service‑Now
         try (Playwright playwright = Playwright.create()) {
@@ -433,15 +434,15 @@ public class ChamadoService {
              c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
                                      ", necessita da substituição do toner!");
             c.setNumeroChamado(chamadoGerado);
-
+            chamadoFinal=chamadoGerado;
              try {
                  chamadoRepository.save(c);
                  System.out.println("Chamado salvo no banco!");
              } catch (Exception e) {
                  System.err.println("Falha ao salvar no banco: " + e.getMessage());
              }
-         }
-
+        }
+        return chamadoFinal;
     }
 
     public void criarChamadoTeste() {
@@ -575,6 +576,7 @@ public class ChamadoService {
     /////////////////////////////////////////////////////////////////
     ////////////////////// MÉTODO ANTIGO ///////////////////////////
     ///////////////////////////////////////////////////////////////
+    
     // private void selecionarArea(Page page, String valorDesejado) {
     //     try {
     //         // Clica na seta para abrir o dropdown do Bloco

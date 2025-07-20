@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,6 +45,9 @@ public class PrinterMonitorService {
 
     @Autowired
     private EpsonScraper epsonScraper;
+
+    @Autowired
+    private FecharChamadoService fecharChamadoService;
 
     private List<String> printerIps;      // SP3710
     private List<String> ricohC3003Ips;  // C3003/C3004
@@ -135,6 +139,8 @@ public class PrinterMonitorService {
        ===================================================== */
     private void checkPrinterPreto(String ip) throws Exception {
         int pct = extrairTonerPreto(ip);
+        String numeroChamado = "";
+
         if (pct == -1) {
             System.out.printf("IP %s sem leitura%n", ip);
             return;
@@ -143,26 +149,35 @@ public class PrinterMonitorService {
         if (pct == 0) {
             System.out.printf("IP %s sem barra de toner. Abrindo chamado.%n", ip);
             if (!impressorasComChamadoAberto.contains(ip)) {
-                abrirChamado(ip, 0);
-                addCalledPrinter(ip); 
+                numeroChamado = abrirChamado(ip, 0);
+                addCalledPrinter(ip, numeroChamado); 
             }
             return;
         }
 
         if (impressorasComChamadoAberto.contains(ip)) {
             if (pct >= LIMITE_CHAMADO) {
-                removeCalledPrinter(ip);
-                System.out.printf("IP %s Toner recuperado (%d%%).%n", ip, pct);
+                Optional<PrinterCall> printerCall = printerCallRepository.findById(ip);
+                if (printerCall.isPresent()) {
+                    String numChamado = printerCall.get().getNumeroChamado();
+                    fecharChamadoService.fecharChamado(numChamado, "Chamado finalizado automaticamente após recuperação de toner (SP3710)");
+                    printerCallRepository.deleteById(ip);
+                    removeCalledPrinter(ip);
+                    System.out.printf("IP %s Toner recuperado (%d%%). Chamado %s finalizado.%n", ip, pct, numChamado);
+                } else {
+                    System.out.printf("⚠️ IP %s não encontrado no banco para finalização de chamado.%n", ip);
+                }
             }
             return;
         }
 
         System.out.printf("IP %s Toner preto %d%%%n", ip, pct);
         if (pct < LIMITE_CHAMADO) {
-            abrirChamado(ip, pct);
-            addCalledPrinter(ip); 
+            numeroChamado = abrirChamado(ip, pct);
+            addCalledPrinter(ip, numeroChamado); 
         }
     }
+
 
     private int extrairTonerPreto(String ip) throws Exception {
         Document doc = fetchFirstAvailable(
@@ -179,9 +194,11 @@ public class PrinterMonitorService {
     /* =====================================================
        RICOH MP C3003 / C3004 – 4 cores
        ===================================================== */
-    private void checkPrinterC3003(String ip) throws Exception {
+    private void checkPrinterC3003(String ip) throws Exception { 
         ColorLevels cl = extrairTonerRicohC3003(ip);
         int menor = cl.menor();
+        String numeroChamado = "";
+
         if (menor == -1) {
             System.out.printf("IP %s sem leitura%n", ip);
             return;
@@ -198,22 +215,31 @@ public class PrinterMonitorService {
 
         String coresStr = "";
         if (coresAbaixo.length() > 0) {
-            coresStr = coresAbaixo.substring(0, coresAbaixo.length() - 2);
+            coresStr = coresAbaixo.substring(0, coresAbaixo.length() - 2); // remove vírgula final
         }
 
         if (aberto) {
             if (coresStr.isEmpty()) {
-                removeCalledPrinter(ip); // remover do banco
-                System.out.printf("IP %s Toners recuperados.%n", ip);
+                Optional<PrinterCall> printerCall = printerCallRepository.findById(ip);
+                if (printerCall.isPresent()) {
+                    String numChamado = printerCall.get().getNumeroChamado();
+                    fecharChamadoService.fecharChamado(numChamado, "Chamado finalizado automaticamente após recuperação de toner (Ricoh C3003)");
+                    printerCallRepository.deleteById(ip);
+                    removeCalledPrinter(ip);
+                    System.out.printf("IP %s Toners recuperados. Chamado %s finalizado.%n", ip, numChamado);
+                } else {
+                    System.out.printf("IP %s não encontrado no banco para finalização de chamado.%n", ip);
+                }
             }
             return;
         }
 
         if (!coresStr.isEmpty()) {
-            abrirChamadoColorido(ip, coresStr);
-            addCalledPrinter(ip); // persistência no banco
+            numeroChamado = abrirChamadoColorido(ip, coresStr);
+            addCalledPrinter(ip, numeroChamado); // persistência no banco com número correto
         }
     }
+
 
 
     private ColorLevels extrairTonerRicohC3003(String ip) throws Exception {
@@ -261,13 +287,13 @@ public class PrinterMonitorService {
         String valor = frameScraperService.capturarValorDoFrame(ip);
 
         if (valor == null) {
-            System.out.printf("Kyocera %s → sem leitura ou erro%n", ip);
+            System.out.printf("Kyocera %s  sem leitura ou erro%n", ip);
             return;
         }
 
         int pct = parsePercent(valor);
         if (pct == -1) {
-            System.out.printf("Kyocera %s → valor inválido '%s'%n", ip, valor);
+            System.out.printf("Kyocera %s  valor inválido '%s'%n", ip, valor);
             return;
         }
 
@@ -275,8 +301,16 @@ public class PrinterMonitorService {
 
         if (aberto) {
             if (pct >= LIMITE_CHAMADO) {
-                removeCalledPrinter(ip);
-                System.out.printf("Kyocera %s Toner recuperado (%d%%)%n", ip, pct);
+                Optional<PrinterCall> printerCall = printerCallRepository.findById(ip);
+                if (printerCall.isPresent()) {
+                    String numChamado = printerCall.get().getNumeroChamado();
+                    fecharChamadoService.fecharChamado(numChamado, "Chamado finalizado automaticamente após verificação de níveis de toner");
+                    printerCallRepository.deleteById(ip); // remove do banco
+                    removeCalledPrinter(ip); // remove da memória (cache)
+                    System.out.printf("Kyocera %s Toner recuperado (%d%%)%n", ip, pct);
+                } else {
+                    System.out.printf("IP %s não encontrado no banco para finalização de chamado.%n", ip);
+                }
             } else {
                 System.out.printf("Kyocera %s Chamado aberto — toner ainda baixo (%d%%)%n", ip, pct);
             }
@@ -286,8 +320,8 @@ public class PrinterMonitorService {
         System.out.printf("Kyocera %s Toner %d%%%n", ip, pct);
 
         if (pct < LIMITE_CHAMADO) {
-            abrirChamado(ip, pct);
-            addCalledPrinter(ip);
+            String numeroChamado=abrirChamado(ip, pct);
+            addCalledPrinter(ip, numeroChamado);
         }
     }
 
@@ -297,6 +331,7 @@ public class PrinterMonitorService {
         private void checkEpson(String ip) {
         final int ALTURA_MAXIMA = 50; // 50 = 100%
         var alturas = epsonScraper.obterNiveisDeTinta(ip);
+        String numeroChamado = "";
 
         if (alturas.isEmpty()) {
             System.out.printf("Epson %s sem leitura%n", ip);
@@ -313,7 +348,6 @@ public class PrinterMonitorService {
         });
 
         StringBuilder coresBaixas = new StringBuilder();
-
         niveisConvertidos.forEach((cor, nivel) -> {
             if (nivel < LIMITE_CHAMADO) {
                 coresBaixas.append(cor).append(", ");
@@ -326,16 +360,22 @@ public class PrinterMonitorService {
             String coresStr = coresBaixas.substring(0, coresBaixas.length() - 2);
 
             if (!aberto) {
-                abrirChamadoColorido(ip, coresStr);
-                addCalledPrinter(ip);
+                numeroChamado = abrirChamadoColorido(ip, coresStr);
+                addCalledPrinter(ip, numeroChamado);
             } else {
                 System.out.printf("Epson %s Chamado já aberto. Tinta(s) baixa(s): %s%n", ip, coresStr);
             }
         } else if (aberto) {
-            System.out.printf("Epson %s Todas tintas recuperadas%n", ip);
-            removeCalledPrinter(ip);
-        } else {
-            System.out.printf("");
+            Optional<PrinterCall> printerCall = printerCallRepository.findById(ip);
+            if (printerCall.isPresent()) {
+                String numChamado = printerCall.get().getNumeroChamado();
+                fecharChamadoService.fecharChamado(numChamado, "Chamado finalizado automaticamente após recuperação das tintas (Epson)");
+                printerCallRepository.deleteById(ip);
+                removeCalledPrinter(ip);
+                System.out.printf("Epson %s Todas tintas recuperadas. Chamado %s finalizado.%n", ip, numChamado);
+            } else {
+                System.out.printf("Epson %s está marcada como 'aberto', mas não consta no banco.%n", ip);
+            }
         }
     }
 
@@ -344,6 +384,7 @@ public class PrinterMonitorService {
        ===================================================== */
     private void checkRicoh(String ip) {
         var niveis = RicohIMScraper.obterNiveisDeToner(ip);
+        String numeroChamado="";
 
         if (niveis.isEmpty()) {
             System.out.printf("Ricoh %s sem leitura%n", ip);
@@ -359,13 +400,21 @@ public class PrinterMonitorService {
                 if (nivel < LIMITE_CHAMADO) {
                     if (!aberto) {
                         abrirChamado(ip, nivel);
-                        addCalledPrinter(ip);
+                        addCalledPrinter(ip, numeroChamado);
                     } else {
                         System.out.printf("Ricoh %s Chamado já aberto. Toner baixo%n", ip);
                     }
                 } else if (aberto) {
-                    System.out.printf("Ricoh %s Toner recuperado%n", ip);
-                    removeCalledPrinter(ip);
+                    Optional<PrinterCall> printerCall = printerCallRepository.findById(ip);
+                    if (printerCall.isPresent()) {
+                        String numChamado = printerCall.get().getNumeroChamado();
+                        fecharChamadoService.fecharChamado(numChamado, "Chamado finalizado automaticamente após recuperação de toner (Ricoh)");
+                        printerCallRepository.deleteById(ip);
+                        removeCalledPrinter(ip);
+                        System.out.printf("Ricoh %s Toners recuperados. Chamado %s finalizado.%n", ip, numChamado);
+                    } else {
+                        System.out.printf("Ricoh %s marcado como aberto mas não encontrado no banco.%n", ip);
+                    }
                 } else {
                     System.out.printf("");
                 }
@@ -412,11 +461,15 @@ public class PrinterMonitorService {
         System.out.printf("IPs com chamado no banco: %s%n", impressorasComChamadoAberto);
     }
 
-    private void addCalledPrinter(String ip) {
+    private void addCalledPrinter(String ip, String numeroChamado) {
         if (impressorasComChamadoAberto.add(ip)) {
-            printerCallRepository.save(new PrinterCall(ip));
+            PrinterCall call = new PrinterCall();
+            call.setIp(ip);
+            call.setNumeroChamado(numeroChamado);
+            printerCallRepository.save(call);
         }
     }
+
     private void removeCalledPrinter(String ip) {
         if (impressorasComChamadoAberto.remove(ip)) {
             printerCallRepository.deleteById(ip);
@@ -429,7 +482,8 @@ public class PrinterMonitorService {
         }
     }
 
-    private void abrirChamado(String ip, int nivel) {
+    private String abrirChamado(String ip, int nivel) {
+        String numeroChamado = "";
         // 1) Descobre o nome da impressora no banco
         String nome = printerRepository.findById(ip)
                         .map(Printer::getName)
@@ -438,15 +492,19 @@ public class PrinterMonitorService {
         System.out.printf("Chamado IP %s (%s) toner %d%%%n", ip, nome, nivel);
 
         // 2) Passa IP + nome ao ChamadoService
-        chamadoService.criarChamadoImpressora(ip, nome);
+        numeroChamado=chamadoService.criarChamadoImpressora(ip, nome);
+        return numeroChamado;
     }
 
-    private void abrirChamadoColorido(String ip, String cores) {
+    private String abrirChamadoColorido(String ip, String cores) {
         String nome = printerRepository.findById(ip)
                         .map(Printer::getName)        
                         .orElse("(sem nome)");
+
         System.out.printf("Chamado Colorido IP %s toner(s) %s%n", ip, cores);
-        chamadoService.criarChamadoImpressoraColorida(ip, cores, nome);
+
+        // Retorna o número do chamado gerado
+        return chamadoService.criarChamadoImpressoraColorida(ip, cores, nome);
     }
 
 }

@@ -9,7 +9,9 @@ import jakarta.persistence.Table;
 public class PrinterCall {
     
     @Id
-    private String ip;           
+    private String ip;
+    
+    private String numeroChamado;
 
     public PrinterCall() {}      
 
@@ -17,5 +19,8 @@ public class PrinterCall {
 
     public String getIp() { return ip; }
     public void setIp(String ip) { this.ip = ip; }
+
+    public String getNumeroChamado() { return numeroChamado; }
+    public void setNumeroChamado(String numeroChamado) { this.numeroChamado = numeroChamado; }
 
 }
