@@ -320,11 +320,11 @@ public class ConversationService {
             }
             case "2" -> {
                 userModes.put(user, MODO_ATENDENTE);
-                return "📞 INCLUIR LINK PARA WHATSAPP DO PLANTÃO AQUI PARA ABRIR CONVERSA NO WHATSAPP DIRETAMENTE! ";
+                return "Para falar diretamente com um de nossos analistas de suporte acesse o link à seguir e seja redirecionado para a conversa: https://api.whatsapp.com/send/?phone=556292928949&text&type=phone_number&app_absent=0 \n *Para voltar ao menu inicial digite 'menu'*";
             }
             case "3" -> {
                 userModes.put(user, MODO_INFO);
-                return "📌 Informações da T.I:\n- Atendimento 24h\n- Suporte emergencial: ramal 4423 ou 4425\n- Email: tihugo@einstein.br";
+                return "📌 Informações da T.I:\n- Atendimento 24h\n- Suporte emergencial: ramal 4423 ou 4425\n- Email: tihugo@einstein.br\n *Para voltar ao menu inicial digite 'menu'*";
             }
             default -> {
                 return getMenuInicial();
