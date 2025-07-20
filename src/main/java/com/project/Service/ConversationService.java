@@ -221,7 +221,7 @@ public class ConversationService {
                     String sintoma = SINTOMAS.get(idx);
                     responses.put("sintoma", sintoma);
                     userStep.put(user, 9);
-                    return "Digite um resumo do problema:";
+                    return "Digite o título do chamado:";
                 } catch (Exception e) {
                     return "❌ Sintoma inválido. Tente novamente.";
                 }
