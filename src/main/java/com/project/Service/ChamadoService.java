@@ -302,7 +302,7 @@ public class ChamadoService {
             selecionarArea(page,          "T.I");
             selecionarCategoria(page,     "Impressoras");
             selecionarSubCategoria(page,  "Impressora de papel");
-            selecionarCentroCusto(page,   "CMHG");
+            selecionarCentroCusto(page,   "TIHG");
             selecionarUrgencia(page,      "O meu departamento e não");
             selecionarSintoma(page,       "Indisponibilidade");
 
@@ -332,7 +332,7 @@ public class ChamadoService {
 
         if (sucesso) {
             Chamado c = new Chamado();
-            c.setTelefone("1199999999");
+            c.setTelefone("6282595863");
             c.setHorario("(BOT)");
             c.setBloco("BLOCO ADMINISTRATIVO");
             c.setAndar("TÉRREO");
@@ -381,7 +381,7 @@ public class ChamadoService {
             Page page = context.newPage();
             page.navigate("https://hiaeprod.service-now.com/esc?id=sc_cat_item&sys_id=d4a89f4c878b16104be0ea480cbb3543");
 
-            page.locator("input[name='telefone_celular']").fill("1199999999");
+            page.locator("input[name='telefone_celular']").fill("6282595863");
             page.locator("input[name='horario_escala_trabalho']").fill("(BOT)");
 
             selecionarUnidade(page,       "HOSP EST DE URGÊNCIAS DE GOIÁS (IIRS)");
@@ -390,7 +390,7 @@ public class ChamadoService {
             selecionarArea(page,          "T.I");
             selecionarCategoria(page,     "Impressoras");
             selecionarSubCategoria(page,  "Impressora de papel");
-            selecionarCentroCusto(page,   "CMHG");
+            selecionarCentroCusto(page,   "TIHG");
             selecionarUrgencia(page,      "O meu departamento e não");
             selecionarSintoma(page,       "Indisponibilidade");
 

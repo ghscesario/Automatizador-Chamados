@@ -3,6 +3,7 @@ package com.project.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.project.Model.Chamado;
@@ -23,6 +24,7 @@ public class NotificacaoChamadosResolvidosService {
     
     private static final String EVOLUTION_INSTANCE_ID = "teste";
 
+    @Scheduled(cron = "0 0 */6 * * ?")
     public void notificarChamadosResolvidos() {
         List<String> numeros = buscadorResolvidosService.buscarNumerosDeChamadosResolvidos();
 
