@@ -30,6 +30,8 @@ public class Chamado {
     private String urgencia;
     private String sintoma;
     private String numeroChamado;
+    @Column(name = "mensagem_enviada")
+    private boolean mensagemEnviada = false;
     
     @Column(length = 400)
     private String resumo;

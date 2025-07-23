@@ -22,7 +22,6 @@ public class EvolutionApiService {
     @Value("${evolutionapi.api-key}")
     private String apiKey;
 
-    // ✅ Corrigir aqui: método com 3 parâmetros
     @SuppressWarnings("UseSpecificCatch")
     public void sendTextMessage(String instanceId, String number, String text) {
         if (text == null || text.trim().isEmpty()) {
