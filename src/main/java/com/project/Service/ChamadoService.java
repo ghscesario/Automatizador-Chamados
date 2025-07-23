@@ -345,6 +345,7 @@ public class ChamadoService {
             c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
                                 ", necessita da substituição do toner!");
             c.setNumeroChamado(chamadoGerado);
+            c.setMensagemEnviada(true);
 
             try {
                 chamadoRepository.save(c);
@@ -434,6 +435,7 @@ public class ChamadoService {
              c.setDescricao("Sistema automatizado identificou na varredura que a impressora: " + ip +
                                      ", necessita da substituição do toner!");
             c.setNumeroChamado(chamadoGerado);
+            c.setMensagemEnviada(true);
             chamadoFinal=chamadoGerado;
              try {
                  chamadoRepository.save(c);

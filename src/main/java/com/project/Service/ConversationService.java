@@ -324,7 +324,7 @@ public class ConversationService {
             }
             case "3" -> {
                 userModes.put(user, MODO_INFO);
-                return "📌 Informações da T.I:\n- Atendimento 24h\n- Suporte emergencial: ramal 4423 ou 4425\n- Email: tihugo@einstein.br\n *Para voltar ao menu inicial digite 'menu'*";
+                return "📌 Informações da T.I:\n- Atendimento 24h\n- Suporte emergencial: ramal 4423 ou 4425\n- Email: tihugo@einstein.br \n*Para voltar ao menu inicial digite 'menu'*";
             }
             default -> {
                 return getMenuInicial();
