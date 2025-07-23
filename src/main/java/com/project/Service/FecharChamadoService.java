@@ -31,13 +31,13 @@ public class FecharChamadoService {
             // 1. Navega para a tela de lista de chamados
             page.navigate("https://hiaeprod.service-now.com.mcas.ms/now/sow/list/params/list-id/310947c0fbe2ee10d612f9d38eefdc59/tiny-id/1AUamOudzbOzJX7WbDaG1GRY9VAqzg2o");
 
+            page.waitForTimeout(5000);
             Locator searchInput = page.locator("input[placeholder='Pesquisar']");
             searchInput.click(new Locator.ClickOptions().setForce(true));
             page.keyboard().type(numeroChamado, new Keyboard.TypeOptions().setDelay(100));
             page.waitForTimeout(5000);
             page.keyboard().press("Enter");
-            page.waitForTimeout(3000);
-
+            page.waitForTimeout(5000);
             Locator botaoDesignar = page.locator("button:has-text('Designar a mim')");
 
             // Verifica se o botão existe
