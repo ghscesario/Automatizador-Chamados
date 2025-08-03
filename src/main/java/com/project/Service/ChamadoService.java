@@ -208,7 +208,7 @@ public class ChamadoService {
 
         try (Playwright playwright = Playwright.create()) { 
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(true));
+                .launch(new BrowserType.LaunchOptions().setHeadless(false));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))

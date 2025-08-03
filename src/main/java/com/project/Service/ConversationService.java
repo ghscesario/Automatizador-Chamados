@@ -236,8 +236,8 @@ public class ConversationService {
             case 10 -> {
                 responses.put("descricao", message.trim());
 
-                // Envia mensagem de "Aguardando"
-                userStep.put(user, 11); // Definimos o próximo passo para controle, mesmo que não vá ser usado
+                // Atualiza passo para controle (mesmo que não seja usado)
+                userStep.put(user, 11);
 
                 // Executa abertura de chamado em background
                 new Thread(() -> {
@@ -258,29 +258,41 @@ public class ConversationService {
                         String descricao = responses.get("descricao");
 
                         retornoChamado = chamadoService.criarChamadoInterno(telefoneLimpo, horario, bloco, andar, area, categoria, subcategoria, sistema, urgencia, sintoma, resumo, descricao);
+
+                        String numero = responses.get("telefone");
+
+                        if (retornoChamado == null || retornoChamado.isBlank()) {
+                            // Se não conseguiu criar chamado, avisa o usuário
+                            String mensagemErro = "❌ Ocorreu um problema ao abrir seu chamado. Por favor, tente novamente mais tarde ou fale com um atendente.\nPara retornar ao menu digite 'menu'.";
+                            evolutionApiService.sendTextMessage("teste", numero, mensagemErro);
+                        } else {
+                            // Chamado criado com sucesso
+                            String mensagemSucesso = "✅ Chamado de número: " + retornoChamado + ", aberto com sucesso!\n\n" +
+                                "📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\n" +
+                                "Ou digite 'menu' para começar novamente.";
+                            evolutionApiService.sendTextMessage("teste", numero, mensagemSucesso);
+                        }
+
                     } catch (Exception e) {
                         System.err.println("Erro ao executar a criação do chamado com Playwright: " + e.getMessage());
+                        try {
+                            String numero = responses.get("telefone");
+                            String mensagemErro = "❌ Ocorreu um erro inesperado ao abrir seu chamado. Por favor, tente novamente mais tarde ou fale com um atendente. \nPara retornar ao menu digite 'menu'.";
+                            evolutionApiService.sendTextMessage("teste", numero, mensagemErro);
+                        } catch (Exception sendEx) {
+                            System.err.println("Erro ao enviar mensagem de erro: " + sendEx.getMessage());
+                        }
                     }
 
-                    // Atualiza passo para menu final
+                    // Atualiza passo e modo para garantir fluxo correto após abertura (ou falha)
                     userStep.put(user, 999);
-                    userModes.put(user, MODO_CHAMADO); // Garante permanência no modo até terminar
-
-                    // Envia a mensagem final para o usuário
-                    String numero = responses.get("telefone");
-                    String mensagemFinal = "✅ Chamado de número: "+retornoChamado+", aberto com sucesso!\n\n📋 Deseja fazer mais alguma coisa?\n1 - Abrir novo chamado\n2 - Falar com atendente\n3 - Informações da T.I\n\nOu digite 'menu' para começar novamente.";
-
-                    // Aqui é necessário um meio de envio manual — você pode injetar o `EvolutionApiService` para isso:
-                    try {
-                        evolutionApiService.sendTextMessage("teste", numero, mensagemFinal);
-                    } catch (Exception e) {
-                        System.err.println("Erro ao enviar mensagem final: " + e.getMessage());
-                    }
+                    userModes.put(user, MODO_CHAMADO);
 
                 }).start();
 
                 return "🛠️ Abrindo chamado, aguarde...";
             }
+
 
             case 61 -> {
                 try {
