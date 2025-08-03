@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastro na Whitelist</title>
+  <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #4a3aff;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #4a3aff;
+      outline: none;
+      box-shadow: 0 0 6px #9a8fff80;
+    }
+
+    button {
+      width: 100%;
+      background: #4a3aff;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #392ecb;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 600;
+      font-size: 16px;
+      user-select: none;
+    }
+    .message.success {
+      color: #2ecc71;
+    }
+    .message.error {
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cadastro Whitelist</h1>
+    <form id="whitelistForm" autocomplete="off">
+      <label for="numero">Número</label>
+      <input type="text" id="numero" name="numero" placeholder="Digite o número" required />
+
+      <label for="nome">Nome</label>
+      <input type="text" id="nome" name="nome" placeholder="Digite o nome" required />
+
+      <label for="cargo">Cargo</label>
+      <input type="text" id="cargo" name="cargo" placeholder="Digite o cargo" required />
+
+      <button type="submit">Cadastrar</button>
+    </form>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('whitelistForm');
+    const messageDiv = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      messageDiv.textContent = '';
+      messageDiv.className = 'message';
+
+      const numero = form.numero.value.trim();
+      const nome = form.nome.value.trim();
+      const cargo = form.cargo.value.trim();
+
+      if (!numero || !nome || !cargo) {
+        messageDiv.textContent = 'Por favor, preencha todos os campos.';
+        messageDiv.classList.add('error');
+        return;
+      }
+
+      const payload = { numero, nome, cargo };
+
+      try {
+        const response = await fetch('http://localhost:8081/whitelist/cadastrar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const text = await response.text();
+          messageDiv.textContent = text;
+          messageDiv.classList.add('success');
+          form.reset();
+        } else {
+          const errorText = await response.text();
+          messageDiv.textContent = errorText || 'Erro ao cadastrar usuário.';
+          messageDiv.classList.add('error');
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Erro de conexão com o servidor.';
+        messageDiv.classList.add('error');
+        console.error('Erro:', error);
+      }
+    });
+  </script>
+</body>
+</html>

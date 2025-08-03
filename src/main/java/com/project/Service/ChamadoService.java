@@ -52,7 +52,7 @@ public class ChamadoService {
 
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+                .launch(new BrowserType.LaunchOptions().setHeadless(true));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
@@ -128,7 +128,7 @@ public class ChamadoService {
 
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+                .launch(new BrowserType.LaunchOptions().setHeadless(true));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
@@ -208,7 +208,7 @@ public class ChamadoService {
 
         try (Playwright playwright = Playwright.create()) { 
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+                .launch(new BrowserType.LaunchOptions().setHeadless(true));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
@@ -284,7 +284,7 @@ public class ChamadoService {
 
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+                .launch(new BrowserType.LaunchOptions().setHeadless(true));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))
@@ -372,7 +372,7 @@ public class ChamadoService {
         // Playwright: cria o chamado no Service‑Now
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium()
-                .launch(new BrowserType.LaunchOptions().setHeadless(false));
+                .launch(new BrowserType.LaunchOptions().setHeadless(true));
 
             BrowserContext context = browser.newContext(
                 new Browser.NewContextOptions().setStorageStatePath(Paths.get("session.json"))

@@ -55,7 +55,20 @@ public class EvolutionWebhookController {
         }
 
         /* ‑‑ 3. Normaliza número --------------------------------------------- */
-        String numero = remoteJid.replace("@s.whatsapp.net", "");
+        String numero;
+        if (remoteJid.endsWith("@s.whatsapp.net")) {
+            numero = remoteJid.replace("@s.whatsapp.net", "");
+        } 
+        //Busca pelo SenderPn em caso de números corporativos
+        else {
+            String senderPn = (String) key.get("senderPn");
+            if (senderPn != null && senderPn.endsWith("@s.whatsapp.net")) {
+                numero = senderPn.replace("@s.whatsapp.net", "");
+            } else {
+                // Fallback ainda mais seguro: extrair tudo antes do @
+                numero = remoteJid.replaceAll("@.*", "");
+            }
+        }
 
         /* ‑‑ 4. Filtra pela whitelist obrigatória --------------------------- */
         if (!listasService.emWhitelist(numero)) {

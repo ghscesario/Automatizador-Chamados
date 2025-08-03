@@ -47,7 +47,7 @@ public class NotificacaoChamadosResolvidosService {
             String telefoneFormatado = "55" + telefone;
 
             if (telefone != null && !telefone.isBlank()) {
-                String mensagem = "Tecnologia da informação HUGO informa! O chamado: "+ titulo +", de número: "+ numero + ", foi resolvido. Deixe sua opinião na pesquisa de satisfação através do link: https://docs.google.com/forms/d/e/1FAIpQLSfpH6KGbP4sanyIsBtOtQuCgyUGdInB4LEMOq9Pmz-N1Ch-nQ/viewform?usp=header";
+                String mensagem = "Tecnologia da informação HUGO informa! O chamado: "+ titulo +", de número: "+ numero + ", foi resolvido. Deixe sua opinião na pesquisa de satisfação através do link: https://docs.google.com/forms/d/e/1FAIpQLSe9bn3ENKmkN8Vm8aJJ148CVotRp1dJOjw5_q08FPF7_T3EZw/viewform?usp=header";
 
                 // Enviar via EvolutionAPI
                 evolutionApiService.sendTextMessage("teste", telefoneFormatado, mensagem);

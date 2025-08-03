@@ -348,7 +348,7 @@ public class ConversationService {
         if (raw == null) return "";
 
         // Remove sufixo WhatsApp
-        raw = raw.replace("@s.whatsapp.net", "");
+        raw = raw.replaceAll("@.*", "");
 
         // Remove todos caracteres não numéricos (ex: espaços, sinais)
         raw = raw.replaceAll("\\D", "");
